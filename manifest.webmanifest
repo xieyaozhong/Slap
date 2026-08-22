@@ -1,15 +1,21 @@
 {
-  "name": "SLAP! Mobile 3.5",
+  "name": "SLAP! Mobile 3.6",
   "short_name": "SLAP!",
-  "description": "手機動作感測遊戲與防盜警戒，內建 CC0 人聲、原創 Bhangra 派對音效、iOS 背景存活強化、Touch Guard 與挑戰模式。",
+  "description": "手機動作感測遊戲與防盜警戒，內建人聲、原創印度 Dhol / Bhangra 音效、拍擊力度分級、挑戰模式與背景存活強化。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#07090c",
   "theme_color": "#07090c",
   "orientation": "portrait",
-  "categories": ["entertainment", "utilities"],
+  "categories": [
+    "entertainment",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "./icon.svg",
