@@ -1,10 +1,11 @@
 {
-  "name": "SLAP! Mobile 2.0",
+  "name": "SLAP! Mobile 3.0",
   "short_name": "SLAP!",
-  "description": "手機動作感測互動工具：衝擊偵測、音效、震動、Combo 與防盜警報模式。",
+  "description": "手機動作感測遊戲與防盜警戒：拍擊偵測、30 秒挑戰、自動校正與事件紀錄。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#07090c",
   "theme_color": "#07090c",
   "orientation": "portrait",
