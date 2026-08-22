@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#08090b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SLAP!" />
+  <title>SLAP! — 手機動作感測器</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <style>
+    :root{
+      --bg:#08090b;
+      --panel:#121419;
+      --panel2:#171a20;
+      --ink:#f4f5f7;
+      --muted:#9197a3;
+      --line:rgba(255,255,255,.09);
+      --acid:#d8ff3e;
+      --hot:#ff4f7b;
+      --cyan:#5ce1e6;
+      --radius:28px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:ui-rounded,"SF Pro Rounded","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{min-height:100svh;overflow-x:hidden;overscroll-behavior:none}
+    button,input,select{font:inherit}
+    button{color:inherit}
+    .app{width:min(760px,100%);margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 30px)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:950;letter-spacing:-.04em;font-size:21px}
+    .brandmark{width:34px;height:34px;border-radius:11px;background:var(--acid);color:#090b0c;display:grid;place-items:center;box-shadow:0 0 36px rgba(216,255,62,.22);transform:rotate(-6deg)}
+    .pill{border:1px solid var(--line);background:#0f1115;color:var(--muted);border-radius:999px;padding:8px 11px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:7px}
+    .dot{width:7px;height:7px;border-radius:50%;background:#68707d;box-shadow:0 0 0 4px rgba(255,255,255,.025)}
+    .pill.on{color:#eaffaa;border-color:rgba(216,255,62,.28);background:rgba(216,255,62,.08)}
+    .pill.on .dot{background:var(--acid);box-shadow:0 0 14px rgba(216,255,62,.8)}
+
+    .hero{position:relative;min-height:430px;border:1px solid var(--line);border-radius:34px;overflow:hidden;background:
+      radial-gradient(circle at 50% 38%,rgba(216,255,62,.11),transparent 37%),
+      linear-gradient(180deg,#111318,#0b0d10);padding:24px 20px 20px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;box-shadow:0 22px 70px rgba(0,0,0,.32)}
+    .hero:before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,rgba(216,255,62,.07),transparent 25%);animation:spin 14s linear infinite;pointer-events:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .hero.flash{animation:hit .22s ease-out}
+    @keyframes hit{0%{box-shadow:0 0 0 rgba(216,255,62,0);filter:brightness(1)}30%{box-shadow:0 0 95px rgba(216,255,62,.55);filter:brightness(1.65)}100%{box-shadow:0 22px 70px rgba(0,0,0,.32);filter:brightness(1)}}
+    .hero.flash .orb{animation:slam .28s cubic-bezier(.2,.9,.2,1)}
+    @keyframes slam{0%{transform:scale(1)}25%{transform:scale(.86) rotate(-5deg)}55%{transform:scale(1.12) rotate(4deg)}100%{transform:scale(1)}}
+    .kicker{position:relative;z-index:1;color:#c7cbd2;font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+    .orbWrap{position:relative;display:grid;place-items:center;flex:1;width:100%}
+    .rings,.rings:before,.rings:after{position:absolute;border-radius:50%;border:1px solid rgba(216,255,62,.13);width:235px;height:235px}
+    .rings:before,.rings:after{content:"";left:50%;top:50%;transform:translate(-50%,-50%)}
+    .rings:before{width:285px;height:285px;border-color:rgba(216,255,62,.08)}
+    .rings:after{width:335px;height:335px;border-color:rgba(216,255,62,.045)}
+    .orb{position:relative;z-index:2;width:204px;height:204px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 30%,#2e3339 0,#171a1f 41%,#0a0c0f 73%);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 3px 14px rgba(255,255,255,.045),0 28px 56px rgba(0,0,0,.42)}
+    .score{font-size:57px;font-weight:950;letter-spacing:-.07em;line-height:.95;font-variant-numeric:tabular-nums}
+    .scoreLabel{margin-top:9px;color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.12em}
+    .meter{position:relative;z-index:2;width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+    .track{height:9px;background:#20242b;border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
+    .fill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--acid),#ffe951,var(--hot));border-radius:inherit;transition:width .08s linear;box-shadow:0 0 16px rgba(216,255,62,.28)}
+    .max{min-width:62px;text-align:right;color:#b4bac4;font-size:12px;font-weight:850;font-variant-numeric:tabular-nums}
+
+    .actions{display:grid;grid-template-columns:1fr 92px;gap:10px;margin:12px 0 18px}
+    .primary,.test{border:0;border-radius:21px;min-height:62px;font-weight:950;cursor:pointer}
+    .primary{background:var(--acid);color:#08090b;font-size:17px;box-shadow:0 12px 35px rgba(216,255,62,.14)}
+    .primary.stop{background:#252932;color:#fff;box-shadow:none}
+    .test{background:#16191f;border:1px solid var(--line);font-size:14px}
+    button:active{transform:scale(.985)}
+
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
+    .stat{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:14px 12px}
+    .stat b{display:block;font-size:21px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+    .stat span{display:block;color:var(--muted);font-size:11px;font-weight:750;margin-top:3px}
+
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-top:12px}
+    .card h2{margin:0 0 15px;font-size:17px;letter-spacing:-.02em}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+    .row:first-of-type{border-top:0;padding-top:2px}
+    .rowText b{display:block;font-size:14px}
+    .rowText small{display:block;color:var(--muted);font-size:11px;margin-top:3px;line-height:1.35}
+    select{appearance:none;border:1px solid var(--line);border-radius:13px;background:#1b1f25;color:#fff;padding:10px 30px 10px 11px;min-width:112px;font-size:13px;font-weight:800;background-image:linear-gradient(45deg,transparent 50%,#a8afb9 50%),linear-gradient(135deg,#a8afb9 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+    .sliderWrap{width:138px;text-align:right}
+    input[type=range]{width:100%;accent-color:var(--acid)}
+    .sliderValue{font-size:11px;color:#cdd1d7;font-weight:850;margin-top:2px}
+    .switch{position:relative;width:48px;height:29px;flex:none}
+    .switch input{display:none}
+    .switch span{position:absolute;inset:0;background:#2a2f37;border-radius:99px;border:1px solid rgba(255,255,255,.06);transition:.2s}
+    .switch span:before{content:"";position:absolute;width:23px;height:23px;left:2px;top:2px;border-radius:50%;background:#f0f2f4;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+    .switch input:checked + span{background:var(--acid)}
+    .switch input:checked + span:before{transform:translateX(19px);background:#0a0b0c}
+    .upload{position:relative;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:13px;background:#1b1f25;padding:10px 12px;font-size:12px;font-weight:850;overflow:hidden;max-width:142px}
+    .upload input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+
+    .help{background:linear-gradient(145deg,rgba(92,225,230,.07),rgba(216,255,62,.04));}
+    .steps{display:grid;gap:12px}
+    .step{display:grid;grid-template-columns:31px 1fr;gap:11px;align-items:start}
+    .stepNo{width:31px;height:31px;border-radius:11px;background:#1f242a;border:1px solid var(--line);display:grid;place-items:center;font-weight:900;font-size:12px;color:var(--acid)}
+    .step b{display:block;font-size:13px;margin-top:1px}
+    .step p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
+    .notice{margin:13px 0 0;padding:11px 12px;border-radius:15px;background:#0d0f12;border:1px solid var(--line);color:#9da4ae;font-size:11px;line-height:1.55}
+    .footer{text-align:center;color:#686f79;font-size:10px;font-weight:700;padding:22px 8px 0}
+    .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 22px);transform:translate(-50%,20px);background:rgba(27,30,36,.94);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);border-radius:15px;padding:11px 14px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.22s;z-index:20;max-width:calc(100vw - 32px);text-align:center}
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+    @media (max-width:380px){.hero{min-height:400px}.orb{width:184px;height:184px}.rings{width:215px;height:215px}.rings:before{width:260px;height:260px}.rings:after{width:300px;height:300px}.score{font-size:51px}.row{gap:10px}.sliderWrap{width:120px}}
+    @media (min-width:650px){.app{padding-left:22px;padding-right:22px}.hero{min-height:470px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid2 .card{margin-top:0}}
+    @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div class="brand"><div class="brandmark">S!</div>SLAP! Mobile</div>
+      <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">待機中</span></div>
+    </div>
+
+    <section class="hero" id="hero">
+      <div class="kicker">Motion impact detector</div>
+      <div class="orbWrap">
+        <div class="rings"></div>
+        <div class="orb">
+          <div class="score" id="score">0.0</div>
+          <div class="scoreLabel">IMPACT</div>
+        </div>
+      </div>
+      <div class="meter">
+        <div class="track"><div class="fill" id="fill"></div></div>
+        <div class="max">MAX <span id="maxScore">0.0</span></div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="primary" id="startBtn">啟動動作感測</button>
+      <button class="test" id="testBtn">測試</button>
+    </div>
+
+    <section class="stats">
+      <div class="stat"><b id="hitCount">0</b><span>觸發次數</span></div>
+      <div class="stat"><b id="thresholdStat">10.0</b><span>觸發門檻</span></div>
+      <div class="stat"><b id="sensorHz">0</b><span>感測 Hz</span></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>偵測設定</h2>
+        <div class="row">
+          <div class="rowText"><b>靈敏度門檻</b><small>越低越容易觸發</small></div>
+          <div class="sliderWrap">
+            <input id="threshold" type="range" min="3" max="28" step="0.5" value="10" />
+            <div class="sliderValue"><span id="thresholdValue">10.0</span> m/s²</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="rowText"><b>冷卻時間</b><small>避免一次拍打連續觸發</small></div>
+          <select id="cooldown">
+            <option value="250">250 ms</option>
+            <option value="450" selected>450 ms</option>
+            <option value="700">700 ms</option>
+            <option value="1000">1 秒</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="rowText"><b>螢幕常亮</b><small>支援的瀏覽器保持畫面開啟</small></div>
+          <label class="switch"><input id="wakeToggle" type="checkbox" checked /><span></span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>回饋效果</h2>
+        <div class="row">
+          <div class="rowText"><b>音效模式</b><small>力度會控制音量與音色</small></div>
+          <select id="soundPack">
+            <option value="slap" selected>SLAP</option>
+            <option value="bonk">BONK</option>
+            <option value="arcade">ARCADE</option>
+            <option value="alarm">ALARM</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="rowText"><b>播放音效</b><small>使用 Web Audio 即時合成</small></div>
+          <label class="switch"><input id="soundToggle" type="checkbox" checked /><span></span></label>
+        </div>
+        <div class="row">
+          <div class="rowText"><b>震動</b><small>Android 支援較完整，iPhone 依系統而定</small></div>
+          <label class="switch"><input id="vibrateToggle" type="checkbox" checked /><span></span></label>
+        </div>
+        <div class="row">
+          <div class="rowText"><b>自訂音效</b><small id="fileName">MP3 / WAV / M4A</small></div>
+          <label class="upload">選擇檔案<input id="customAudio" type="file" accept="audio/*" /></label>
+        </div>
+      </section>
+    </div>
+
+    <section class="card help">
+      <h2>手機使用方式</h2>
+      <div class="steps">
+        <div class="step"><div class="stepNo">01</div><div><b>按「啟動動作感測」</b><p>iPhone / iPad 會要求「動作與方向」權限，請選允許。</p></div></div>
+        <div class="step"><div class="stepNo">02</div><div><b>先用「測試」確認音效</b><p>這一步也會解除手機瀏覽器的音訊播放限制。</p></div></div>
+        <div class="step"><div class="stepNo">03</div><div><b>拿穩手機，再輕拍或快速晃一下</b><p>畫面顯示的 Impact 超過門檻就會觸發。若太敏感，把門檻拉高。</p></div></div>
+      </div>
+      <div class="notice">請不要用力摔、敲或撞擊手機。本頁是利用手機 IMU 動作資料做衝擊偵測，不需要麥克風；感測資料只在目前頁面本機運算。</div>
+    </section>
+
+    <div class="footer">SLAP! MOBILE · BROWSER MOTION LAB · 2026</div>
+  </main>
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (q) => document.querySelector(q);
+  const ui = {
+    hero: $('#hero'), score: $('#score'), fill: $('#fill'), maxScore: $('#maxScore'),
+    startBtn: $('#startBtn'), testBtn: $('#testBtn'), statusPill: $('#statusPill'), statusText: $('#statusText'),
+    hitCount: $('#hitCount'), threshold: $('#threshold'), thresholdValue: $('#thresholdValue'), thresholdStat: $('#thresholdStat'),
+    cooldown: $('#cooldown'), soundPack: $('#soundPack'), soundToggle: $('#soundToggle'), vibrateToggle: $('#vibrateToggle'),
+    wakeToggle: $('#wakeToggle'), sensorHz: $('#sensorHz'), customAudio: $('#customAudio'), fileName: $('#fileName'), toast: $('#toast')
+  };
+
+  let running = false;
+  let audioCtx = null;
+  let customBuffer = null;
+  let lastHit = 0;
+  let hitCount = 0;
+  let maxScore = 0;
+  let displayScore = 0;
+  let gravity = {x:0,y:0,z:0};
+  let lastMagnitude = 0;
+  let wakeLock = null;
+  let sampleCount = 0;
+  let hzTimer = null;
+  let raf = null;
+
+  const saved = JSON.parse(localStorage.getItem('slap-mobile-settings') || '{}');
+  if (saved.threshold) ui.threshold.value = saved.threshold;
+  if (saved.cooldown) ui.cooldown.value = saved.cooldown;
+  if (saved.soundPack) ui.soundPack.value = saved.soundPack;
+  if (typeof saved.sound === 'boolean') ui.soundToggle.checked = saved.sound;
+  if (typeof saved.vibrate === 'boolean') ui.vibrateToggle.checked = saved.vibrate;
+  if (typeof saved.wake === 'boolean') ui.wakeToggle.checked = saved.wake;
+
+  function persist(){
+    localStorage.setItem('slap-mobile-settings', JSON.stringify({
+      threshold: ui.threshold.value,
+      cooldown: ui.cooldown.value,
+      soundPack: ui.soundPack.value,
+      sound: ui.soundToggle.checked,
+      vibrate: ui.vibrateToggle.checked,
+      wake: ui.wakeToggle.checked
+    }));
+  }
+
+  function updateThreshold(){
+    const v = Number(ui.threshold.value).toFixed(1);
+    ui.thresholdValue.textContent = v;
+    ui.thresholdStat.textContent = v;
+    persist();
+  }
+  updateThreshold();
+  ['cooldown','soundPack','soundToggle','vibrateToggle','wakeToggle'].forEach(id => ui[id].addEventListener('change', persist));
+  ui.threshold.addEventListener('input', updateThreshold);
+
+  function toast(msg){
+    ui.toast.textContent = msg;
+    ui.toast.classList.add('show');
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => ui.toast.classList.remove('show'), 2200);
+  }
+
+  async function ensureAudio(){
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+  }
+
+  function setStatus(on, text){
+    ui.statusPill.classList.toggle('on', on);
+    ui.statusText.textContent = text;
+    ui.startBtn.textContent = on ? '停止感測' : '啟動動作感測';
+    ui.startBtn.classList.toggle('stop', on);
+  }
+
+  async function requestWakeLock(){
+    if (!ui.wakeToggle.checked || !('wakeLock' in navigator)) return;
+    try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+  }
+  async function releaseWakeLock(){
+    try{ if (wakeLock) await wakeLock.release(); }catch(e){}
+    wakeLock = null;
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && running) requestWakeLock();
+  });
+
+  async function start(){
+    try{
+      await ensureAudio();
+      if (typeof DeviceMotionEvent === 'undefined') {
+        toast('此瀏覽器沒有提供 DeviceMotion 感測器');
+        return;
+      }
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        const result = await DeviceMotionEvent.requestPermission();
+        if (result !== 'granted') {
+          toast('需要允許「動作與方向」才能偵測拍打');
+          return;
+        }
+      }
+      gravity = {x:0,y:0,z:0};
+      lastMagnitude = 0;
+      sampleCount = 0;
+      window.addEventListener('devicemotion', onMotion, {passive:true});
+      running = true;
+      setStatus(true, '感測中');
+      await requestWakeLock();
+      clearInterval(hzTimer);
+      hzTimer = setInterval(() => { ui.sensorHz.textContent = sampleCount; sampleCount = 0; }, 1000);
+      animateMeter();
+      toast('感測器已啟動');
+    } catch (err) {
+      console.error(err);
+      toast('啟動失敗，請確認瀏覽器的動作感測權限');
+    }
+  }
+
+  async function stop(){
+    window.removeEventListener('devicemotion', onMotion);
+    running = false;
+    clearInterval(hzTimer);
+    ui.sensorHz.textContent = '0';
+    setStatus(false, '待機中');
+    await releaseWakeLock();
+    cancelAnimationFrame(raf);
+    toast('已停止感測');
+  }
+
+  function onMotion(e){
+    sampleCount++;
+    let ax=0, ay=0, az=0;
+    if (e.acceleration && [e.acceleration.x,e.acceleration.y,e.acceleration.z].every(v => v !== null)) {
+      ax = e.acceleration.x || 0;
+      ay = e.acceleration.y || 0;
+      az = e.acceleration.z || 0;
+    } else if (e.accelerationIncludingGravity) {
+      const a = e.accelerationIncludingGravity;
+      const alpha = .82;
+      gravity.x = alpha * gravity.x + (1-alpha) * (a.x || 0);
+      gravity.y = alpha * gravity.y + (1-alpha) * (a.y || 0);
+      gravity.z = alpha * gravity.z + (1-alpha) * (a.z || 0);
+      ax = (a.x || 0) - gravity.x;
+      ay = (a.y || 0) - gravity.y;
+      az = (a.z || 0) - gravity.z;
+    } else return;
+
+    const magnitude = Math.sqrt(ax*ax + ay*ay + az*az);
+    const jerk = Math.abs(magnitude - lastMagnitude);
+    lastMagnitude = magnitude;
+    const impact = Math.min(60, magnitude + jerk * .42);
+    displayScore = Math.max(displayScore, impact);
+    maxScore = Math.max(maxScore, impact);
+    ui.maxScore.textContent = maxScore.toFixed(1);
+
+    const threshold = Number(ui.threshold.value);
+    const now = performance.now();
+    if (impact >= threshold && now - lastHit >= Number(ui.cooldown.value)) {
+      lastHit = now;
+      trigger(impact, false);
+    }
+  }
+
+  function animateMeter(){
+    const threshold = Number(ui.threshold.value);
+    displayScore *= .88;
+    if (displayScore < .05) displayScore = 0;
+    ui.score.textContent = displayScore.toFixed(1);
+    ui.fill.style.width = Math.min(100, displayScore / Math.max(threshold*2.2, 24) * 100) + '%';
+    if (running || displayScore > 0) raf = requestAnimationFrame(animateMeter);
+  }
+
+  function flash(){
+    ui.hero.classList.remove('flash');
+    void ui.hero.offsetWidth;
+    ui.hero.classList.add('flash');
+    setTimeout(() => ui.hero.classList.remove('flash'), 320);
+  }
+
+  function noiseBurst(ctx, start, duration, gainAmount, hp=650){
+    const length = Math.max(1, Math.floor(ctx.sampleRate * duration));
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<length;i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/length, .3);
+    const src = ctx.createBufferSource(); src.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type='highpass'; filter.frequency.value=hp;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(gainAmount, start);
+    gain.gain.exponentialRampToValueAtTime(.001, start+duration);
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(start); src.stop(start+duration+.02);
+  }
+
+  function tone(ctx, type, from, to, start, duration, gainAmount){
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(from, start);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(30,to), start+duration);
+    gain.gain.setValueAtTime(gainAmount, start);
+    gain.gain.exponentialRampToValueAtTime(.001, start+duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(start); osc.stop(start+duration+.02);
+  }
+
+  async function playSound(intensity){
+    if (!ui.soundToggle.checked) return;
+    await ensureAudio();
+    const ctx = audioCtx;
+    const power = Math.max(.2, Math.min(1, intensity / 28));
+    const now = ctx.currentTime;
+
+    if (customBuffer) {
+      const src = ctx.createBufferSource(); const gain = ctx.createGain();
+      src.buffer = customBuffer; gain.gain.value = .35 + power*.65;
+      src.connect(gain).connect(ctx.destination); src.start();
+      return;
+    }
+
+    switch(ui.soundPack.value){
+      case 'bonk':
+        tone(ctx,'sine',210+power*55,72,now,.24,.28+power*.45);
+        tone(ctx,'triangle',420,130,now,.12,.08+power*.15);
+        break;
+      case 'arcade':
+        tone(ctx,'square',620+power*220,180,now,.16,.08+power*.11);
+        tone(ctx,'square',920,260,now+.055,.12,.05+power*.08);
+        break;
+      case 'alarm':
+        tone(ctx,'sawtooth',730,620,now,.24,.06+power*.08);
+        tone(ctx,'sawtooth',910,760,now+.14,.25,.05+power*.07);
+        break;
+      default:
+        noiseBurst(ctx,now,.085,.22+power*.38,520);
+        noiseBurst(ctx,now+.01,.045,.11+power*.23,1900);
+        tone(ctx,'sine',155+power*35,58,now,.13,.18+power*.28);
+    }
+  }
+
+  function vibrate(intensity){
+    if (!ui.vibrateToggle.checked || !navigator.vibrate) return;
+    const d = Math.round(18 + Math.min(55, intensity*1.5));
+    navigator.vibrate(d);
+  }
+
+  function trigger(intensity, isTest){
+    displayScore = Math.max(displayScore, intensity);
+    maxScore = Math.max(maxScore, intensity);
+    ui.maxScore.textContent = maxScore.toFixed(1);
+    hitCount++;
+    ui.hitCount.textContent = hitCount;
+    flash();
+    playSound(intensity).catch(()=>{});
+    vibrate(intensity);
+    if (isTest) toast('測試觸發成功');
+  }
+
+  ui.startBtn.addEventListener('click', () => running ? stop() : start());
+  ui.testBtn.addEventListener('click', async () => {
+    await ensureAudio();
+    if (!raf) animateMeter();
+    trigger(Number(ui.threshold.value) * 1.35, true);
+  });
+
+  ui.customAudio.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try{
+      await ensureAudio();
+      const buf = await file.arrayBuffer();
+      customBuffer = await audioCtx.decodeAudioData(buf.slice(0));
+      ui.fileName.textContent = file.name.length > 18 ? file.name.slice(0,15)+'…' : file.name;
+      toast('自訂音效已載入');
+    } catch(err){
+      customBuffer = null;
+      toast('無法讀取這個音訊檔');
+    }
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  }
+})();
+</script>
+</body>
+</html>
