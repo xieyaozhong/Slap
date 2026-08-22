@@ -1,7 +1,7 @@
 {
-  "name": "SLAP! Mobile 3.4",
+  "name": "SLAP! Mobile 3.5",
   "short_name": "SLAP!",
-  "description": "手機動作感測遊戲與防盜警戒，內建 CC0 真實音效、拍擊力度分級、30 秒挑戰、自動校正與事件紀錄。",
+  "description": "手機動作感測遊戲與防盜警戒，內建 CC0 人聲、原創 Bhangra 派對音效、iOS 背景存活強化、Touch Guard 與挑戰模式。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
