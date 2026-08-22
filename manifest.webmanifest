@@ -1,13 +1,14 @@
 {
-  "name": "SLAP! Mobile",
+  "name": "SLAP! Mobile 2.0",
   "short_name": "SLAP!",
-  "description": "用手機加速度感測器偵測拍打、晃動與衝擊，觸發音效、震動與視覺回饋。",
+  "description": "手機動作感測互動工具：衝擊偵測、音效、震動、Combo 與防盜警報模式。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#08090b",
-  "theme_color": "#08090b",
+  "background_color": "#07090c",
+  "theme_color": "#07090c",
   "orientation": "portrait",
+  "categories": ["entertainment", "utilities"],
   "icons": [
     {
       "src": "./icon.svg",
