@@ -1,0 +1,42 @@
+name: Upgrade Bhangra-style SFX
+
+on:
+  push:
+    paths:
+      - 'tools/upgrade_bhangra_sfx.py'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Patch app
+        run: python3 tools/upgrade_bhangra_sfx.py
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>\s*(.*?)\s*</script>',s,re.S)
+          if not m: raise SystemExit('inline script not found')
+          Path('/tmp/slap.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/slap.js
+      - name: Commit upgrade
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html manifest.webmanifest sw.js
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit'
+          else
+            git commit -m 'Upgrade SLAP Mobile to 3.5 Bhangra-style SFX'
+            git push
+          fi
