@@ -1,0 +1,50 @@
+name: Fix human audio JavaScript
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-human-audio-js.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair selector and validate inline JavaScript
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          broken="function samplePath(kind,power){const arr=sampleFiles[kind];if(!arr||!arr.length)return null;if(kind==='slap'){const r=power/state.threshold;return arr[r<1.3?0:r<1.9?1:2]}return arr[Math.floor(Math.random()*arr.length)]}return arr[0]}"
+          fixed="function samplePath(kind,power){const arr=sampleFiles[kind];if(!arr||!arr.length)return null;if(kind==='slap'){const r=power/state.threshold;return arr[r<1.3?0:r<1.9?1:2]}return arr[Math.floor(Math.random()*arr.length)]}"
+          if broken in s:
+              s=s.replace(broken,fixed,1)
+          else:
+              # Defensive repair if spacing changes.
+              s=re.sub(r"function samplePath\(kind,power\)\{const arr=sampleFiles\[kind\];if\(!arr\|\|!arr\.length\)return null;if\(kind==='slap'\)\{const r=power/state\.threshold;return arr\[r<1\.3\?0:r<1\.9\?1:2\]\}return arr\[Math\.floor\(Math\.random\(\)\*arr\.length\)\]\}return arr\[0\]\}", fixed, s, count=1)
+          p.write_text(s,encoding='utf-8')
+          # Extract the inline app script for node --check.
+          m=re.search(r'<script>\s*(.*?)\s*</script>',s,re.S)
+          if not m:
+              raise SystemExit('inline script not found')
+          Path('/tmp/slap-inline.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/slap-inline.js
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit'
+          else
+            git commit -m 'Fix human voice random selector syntax'
+            git push
+          fi
