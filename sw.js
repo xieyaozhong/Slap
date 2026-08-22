@@ -1,4 +1,4 @@
-const CACHE='slap-mobile-v4-cc0';
+const CACHE='slap-mobile-v4-cc0-1';
 const ASSETS=["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./sounds/alarm.ogg", "./sounds/bell.ogg", "./sounds/bonk.ogg", "./sounds/cat.ogg", "./sounds/crash.ogg", "./sounds/slap-heavy.ogg", "./sounds/slap-medium.ogg", "./sounds/slap-soft.ogg"];
 
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
