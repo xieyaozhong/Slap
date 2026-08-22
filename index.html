@@ -1,487 +1,89 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-  <meta name="theme-color" content="#08090b" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="SLAP!" />
-  <title>SLAP! — 手機動作感測器</title>
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <style>
-    :root{
-      --bg:#08090b;
-      --panel:#121419;
-      --panel2:#171a20;
-      --ink:#f4f5f7;
-      --muted:#9197a3;
-      --line:rgba(255,255,255,.09);
-      --acid:#d8ff3e;
-      --hot:#ff4f7b;
-      --cyan:#5ce1e6;
-      --radius:28px;
-    }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:ui-rounded,"SF Pro Rounded","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    body{min-height:100svh;overflow-x:hidden;overscroll-behavior:none}
-    button,input,select{font:inherit}
-    button{color:inherit}
-    .app{width:min(760px,100%);margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 30px)}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:950;letter-spacing:-.04em;font-size:21px}
-    .brandmark{width:34px;height:34px;border-radius:11px;background:var(--acid);color:#090b0c;display:grid;place-items:center;box-shadow:0 0 36px rgba(216,255,62,.22);transform:rotate(-6deg)}
-    .pill{border:1px solid var(--line);background:#0f1115;color:var(--muted);border-radius:999px;padding:8px 11px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:7px}
-    .dot{width:7px;height:7px;border-radius:50%;background:#68707d;box-shadow:0 0 0 4px rgba(255,255,255,.025)}
-    .pill.on{color:#eaffaa;border-color:rgba(216,255,62,.28);background:rgba(216,255,62,.08)}
-    .pill.on .dot{background:var(--acid);box-shadow:0 0 14px rgba(216,255,62,.8)}
-
-    .hero{position:relative;min-height:430px;border:1px solid var(--line);border-radius:34px;overflow:hidden;background:
-      radial-gradient(circle at 50% 38%,rgba(216,255,62,.11),transparent 37%),
-      linear-gradient(180deg,#111318,#0b0d10);padding:24px 20px 20px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;box-shadow:0 22px 70px rgba(0,0,0,.32)}
-    .hero:before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,rgba(216,255,62,.07),transparent 25%);animation:spin 14s linear infinite;pointer-events:none}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .hero.flash{animation:hit .22s ease-out}
-    @keyframes hit{0%{box-shadow:0 0 0 rgba(216,255,62,0);filter:brightness(1)}30%{box-shadow:0 0 95px rgba(216,255,62,.55);filter:brightness(1.65)}100%{box-shadow:0 22px 70px rgba(0,0,0,.32);filter:brightness(1)}}
-    .hero.flash .orb{animation:slam .28s cubic-bezier(.2,.9,.2,1)}
-    @keyframes slam{0%{transform:scale(1)}25%{transform:scale(.86) rotate(-5deg)}55%{transform:scale(1.12) rotate(4deg)}100%{transform:scale(1)}}
-    .kicker{position:relative;z-index:1;color:#c7cbd2;font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
-    .orbWrap{position:relative;display:grid;place-items:center;flex:1;width:100%}
-    .rings,.rings:before,.rings:after{position:absolute;border-radius:50%;border:1px solid rgba(216,255,62,.13);width:235px;height:235px}
-    .rings:before,.rings:after{content:"";left:50%;top:50%;transform:translate(-50%,-50%)}
-    .rings:before{width:285px;height:285px;border-color:rgba(216,255,62,.08)}
-    .rings:after{width:335px;height:335px;border-color:rgba(216,255,62,.045)}
-    .orb{position:relative;z-index:2;width:204px;height:204px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 30%,#2e3339 0,#171a1f 41%,#0a0c0f 73%);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 3px 14px rgba(255,255,255,.045),0 28px 56px rgba(0,0,0,.42)}
-    .score{font-size:57px;font-weight:950;letter-spacing:-.07em;line-height:.95;font-variant-numeric:tabular-nums}
-    .scoreLabel{margin-top:9px;color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.12em}
-    .meter{position:relative;z-index:2;width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
-    .track{height:9px;background:#20242b;border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
-    .fill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--acid),#ffe951,var(--hot));border-radius:inherit;transition:width .08s linear;box-shadow:0 0 16px rgba(216,255,62,.28)}
-    .max{min-width:62px;text-align:right;color:#b4bac4;font-size:12px;font-weight:850;font-variant-numeric:tabular-nums}
-
-    .actions{display:grid;grid-template-columns:1fr 92px;gap:10px;margin:12px 0 18px}
-    .primary,.test{border:0;border-radius:21px;min-height:62px;font-weight:950;cursor:pointer}
-    .primary{background:var(--acid);color:#08090b;font-size:17px;box-shadow:0 12px 35px rgba(216,255,62,.14)}
-    .primary.stop{background:#252932;color:#fff;box-shadow:none}
-    .test{background:#16191f;border:1px solid var(--line);font-size:14px}
-    button:active{transform:scale(.985)}
-
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
-    .stat{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:14px 12px}
-    .stat b{display:block;font-size:21px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-    .stat span{display:block;color:var(--muted);font-size:11px;font-weight:750;margin-top:3px}
-
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-top:12px}
-    .card h2{margin:0 0 15px;font-size:17px;letter-spacing:-.02em}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
-    .row:first-of-type{border-top:0;padding-top:2px}
-    .rowText b{display:block;font-size:14px}
-    .rowText small{display:block;color:var(--muted);font-size:11px;margin-top:3px;line-height:1.35}
-    select{appearance:none;border:1px solid var(--line);border-radius:13px;background:#1b1f25;color:#fff;padding:10px 30px 10px 11px;min-width:112px;font-size:13px;font-weight:800;background-image:linear-gradient(45deg,transparent 50%,#a8afb9 50%),linear-gradient(135deg,#a8afb9 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
-    .sliderWrap{width:138px;text-align:right}
-    input[type=range]{width:100%;accent-color:var(--acid)}
-    .sliderValue{font-size:11px;color:#cdd1d7;font-weight:850;margin-top:2px}
-    .switch{position:relative;width:48px;height:29px;flex:none}
-    .switch input{display:none}
-    .switch span{position:absolute;inset:0;background:#2a2f37;border-radius:99px;border:1px solid rgba(255,255,255,.06);transition:.2s}
-    .switch span:before{content:"";position:absolute;width:23px;height:23px;left:2px;top:2px;border-radius:50%;background:#f0f2f4;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.3)}
-    .switch input:checked + span{background:var(--acid)}
-    .switch input:checked + span:before{transform:translateX(19px);background:#0a0b0c}
-    .upload{position:relative;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:13px;background:#1b1f25;padding:10px 12px;font-size:12px;font-weight:850;overflow:hidden;max-width:142px}
-    .upload input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
-
-    .help{background:linear-gradient(145deg,rgba(92,225,230,.07),rgba(216,255,62,.04));}
-    .steps{display:grid;gap:12px}
-    .step{display:grid;grid-template-columns:31px 1fr;gap:11px;align-items:start}
-    .stepNo{width:31px;height:31px;border-radius:11px;background:#1f242a;border:1px solid var(--line);display:grid;place-items:center;font-weight:900;font-size:12px;color:var(--acid)}
-    .step b{display:block;font-size:13px;margin-top:1px}
-    .step p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
-    .notice{margin:13px 0 0;padding:11px 12px;border-radius:15px;background:#0d0f12;border:1px solid var(--line);color:#9da4ae;font-size:11px;line-height:1.55}
-    .footer{text-align:center;color:#686f79;font-size:10px;font-weight:700;padding:22px 8px 0}
-    .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 22px);transform:translate(-50%,20px);background:rgba(27,30,36,.94);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);border-radius:15px;padding:11px 14px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.22s;z-index:20;max-width:calc(100vw - 32px);text-align:center}
-    .toast.show{opacity:1;transform:translate(-50%,0)}
-    @media (max-width:380px){.hero{min-height:400px}.orb{width:184px;height:184px}.rings{width:215px;height:215px}.rings:before{width:260px;height:260px}.rings:after{width:300px;height:300px}.score{font-size:51px}.row{gap:10px}.sliderWrap{width:120px}}
-    @media (min-width:650px){.app{padding-left:22px;padding-right:22px}.hero{min-height:470px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid2 .card{margin-top:0}}
-    @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07090c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SLAP!">
+<title>SLAP! Mobile 2.0</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#07090c;--panel:#11151b;--panel2:#171c24;--line:rgba(255,255,255,.09);--ink:#f7f8fa;--muted:#8b94a3;--acid:#d9ff43;--cyan:#5ce1e6;--hot:#ff496f;--orange:#ffb02e;--r:26px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:ui-rounded,"SF Pro Rounded","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{min-height:100svh;overscroll-behavior:none;overflow-x:hidden}button,input,select{font:inherit}button{color:inherit}.app{width:min(780px,100%);margin:auto;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 34px)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:950;letter-spacing:-.05em}.logo{width:36px;height:36px;border-radius:12px;background:var(--acid);color:#080a0d;display:grid;place-items:center;transform:rotate(-5deg);box-shadow:0 0 35px rgba(217,255,67,.17)}.status{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#0d1015;border-radius:999px;padding:8px 11px;color:var(--muted);font-size:12px;font-weight:850}.dot{width:7px;height:7px;border-radius:50%;background:#5f6672}.status.on{color:#eaffad;border-color:rgba(217,255,67,.26);background:rgba(217,255,67,.07)}.status.on .dot{background:var(--acid);box-shadow:0 0 13px rgba(217,255,67,.8)}.status.alarm{color:#ffd5dc;background:rgba(255,73,111,.12);border-color:rgba(255,73,111,.38)}.status.alarm .dot{background:var(--hot);box-shadow:0 0 16px rgba(255,73,111,.9)}
+.modeTabs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}.modeTab{border:1px solid var(--line);background:#0f1318;border-radius:17px;padding:12px 10px;font-size:13px;font-weight:900;color:#b4bbc6}.modeTab.active{background:var(--ink);color:#090b0e;border-color:transparent}.modeTab.danger.active{background:var(--hot);color:white}
+.hero{position:relative;overflow:hidden;min-height:430px;border:1px solid var(--line);border-radius:34px;background:radial-gradient(circle at 50% 37%,rgba(217,255,67,.12),transparent 37%),linear-gradient(180deg,#12161d,#0a0d11);padding:21px 18px;display:flex;flex-direction:column;align-items:center;box-shadow:0 25px 80px rgba(0,0,0,.33);transition:.25s}.hero:before{content:"";position:absolute;inset:-45%;background:conic-gradient(from 0deg,transparent,rgba(217,255,67,.055),transparent 26%);animation:spin 15s linear infinite;pointer-events:none}.hero.alarm{background:radial-gradient(circle at 50% 38%,rgba(255,73,111,.22),transparent 42%),linear-gradient(180deg,#2a0b13,#10080b);border-color:rgba(255,73,111,.4);animation:alarmPulse .7s ease-in-out infinite alternate}.hero.hit{animation:hit .28s ease-out}.hero.hit .orb{animation:slam .3s cubic-bezier(.2,.9,.2,1)}@keyframes spin{to{transform:rotate(360deg)}}@keyframes slam{20%{transform:scale(.84) rotate(-4deg)}55%{transform:scale(1.13) rotate(4deg)}}@keyframes hit{35%{filter:brightness(1.7);box-shadow:0 0 90px rgba(217,255,67,.42)}}@keyframes alarmPulse{to{filter:brightness(1.28);box-shadow:0 0 75px rgba(255,73,111,.25)}}
+.kicker{position:relative;z-index:2;color:#bdc3cc;font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.orbWrap{position:relative;display:grid;place-items:center;flex:1;width:100%}.rings,.rings:before,.rings:after{position:absolute;width:240px;height:240px;border:1px solid rgba(217,255,67,.14);border-radius:50%}.rings:before,.rings:after{content:"";left:50%;top:50%;transform:translate(-50%,-50%)}.rings:before{width:292px;height:292px;border-color:rgba(217,255,67,.08)}.rings:after{width:345px;height:345px;border-color:rgba(217,255,67,.04)}.hero.alarm .rings,.hero.alarm .rings:before,.hero.alarm .rings:after{border-color:rgba(255,73,111,.18)}.orb{position:relative;z-index:2;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle at 36% 28%,#343a43,#171b22 45%,#090b0f 75%);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 3px 14px rgba(255,255,255,.04),0 30px 60px rgba(0,0,0,.44);display:flex;flex-direction:column;align-items:center;justify-content:center}.impact{font-size:58px;font-weight:950;letter-spacing:-.075em;line-height:.94;font-variant-numeric:tabular-nums}.label{margin-top:8px;color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.15em}.tier{position:absolute;bottom:22px;border:1px solid var(--line);background:rgba(8,10,13,.68);backdrop-filter:blur(10px);border-radius:999px;padding:7px 12px;font-size:11px;font-weight:950;color:#c6ccd5;letter-spacing:.06em}.tier.soft{color:var(--cyan)}.tier.medium{color:var(--acid)}.tier.hard{color:var(--orange)}.tier.critical{color:#ff7d98}.meter{position:relative;z-index:2;width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}.track{height:9px;border-radius:999px;overflow:hidden;background:#1d222a;border:1px solid rgba(255,255,255,.04)}.fill{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--cyan),var(--acid),var(--orange),var(--hot));transition:width .08s linear}.max{font-size:11px;color:#a9b0bc;font-weight:900;min-width:68px;text-align:right;font-variant-numeric:tabular-nums}
+.actions{display:grid;grid-template-columns:1fr 92px;gap:9px;margin:11px 0 10px}.btn{min-height:61px;border-radius:20px;border:1px solid var(--line);font-weight:950;cursor:pointer}.primary{border:0;background:var(--acid);color:#090b0e;font-size:16px;box-shadow:0 13px 34px rgba(217,255,67,.13)}.primary.stop{background:#242a33;color:white;box-shadow:none}.test{background:#14181f;font-size:13px}.arm{width:100%;min-height:58px;border:0;border-radius:20px;background:var(--hot);font-weight:950;font-size:15px;box-shadow:0 14px 34px rgba(255,73,111,.13)}.arm.disarm{background:#2a303a;box-shadow:none}button:active{transform:scale(.985)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 15px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px 9px}.stat b{display:block;font-size:19px;letter-spacing:-.045em;font-variant-numeric:tabular-nums}.stat span{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:800}.card{margin-top:11px;padding:17px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}.card h2{margin:0 0 14px;font-size:16px;letter-spacing:-.025em}.row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--line)}.row:first-of-type{border-top:0;padding-top:1px}.rowText b{display:block;font-size:13px}.rowText small{display:block;margin-top:3px;color:var(--muted);font-size:10.5px;line-height:1.4}.slider{width:145px;text-align:right}input[type=range]{width:100%;accent-color:var(--acid)}.val{font-size:10.5px;color:#c8ced6;font-weight:900}.switch{position:relative;width:48px;height:29px;flex:none}.switch input{display:none}.switch span{position:absolute;inset:0;border-radius:999px;background:#2a3039;border:1px solid rgba(255,255,255,.06);transition:.2s}.switch span:before{content:"";position:absolute;left:2px;top:2px;width:23px;height:23px;border-radius:50%;background:#f0f2f5;transition:.2s}.switch input:checked+span{background:var(--acid)}.switch input:checked+span:before{transform:translateX(19px);background:#0a0c0f}select{appearance:none;border:1px solid var(--line);border-radius:13px;background:#1a1f27;color:white;padding:10px 30px 10px 11px;font-size:12px;font-weight:850;min-width:112px;background-image:linear-gradient(45deg,transparent 50%,#aeb5bf 50%),linear-gradient(135deg,#aeb5bf 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px;background-repeat:no-repeat}.upload{position:relative;border:1px solid var(--line);border-radius:13px;background:#1a1f27;padding:10px 12px;font-size:11px;font-weight:900;max-width:145px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.upload input{position:absolute;inset:0;opacity:0;width:100%}.presetGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.preset{border:1px solid var(--line);border-radius:16px;background:#171c23;padding:13px 8px;font-size:12px;font-weight:900;color:#bfc6d0}.preset.active{background:rgba(217,255,67,.1);border-color:rgba(217,255,67,.32);color:#ebffad}.preset .emoji{display:block;font-size:21px;margin-bottom:5px}.security{display:none}.security.show{display:block}.normal.hidden{display:none}.securityBanner{padding:14px;border-radius:19px;border:1px solid rgba(255,73,111,.22);background:rgba(255,73,111,.065);color:#ffc4d0;font-size:12px;line-height:1.5;font-weight:750}.countdown{font-size:46px;font-weight:950;text-align:center;letter-spacing:-.06em;padding:10px 0;color:var(--hot)}.help{background:linear-gradient(145deg,rgba(92,225,230,.065),rgba(217,255,67,.035))}.tips{display:grid;gap:10px}.tip{display:grid;grid-template-columns:29px 1fr;gap:10px}.tip i{width:29px;height:29px;border-radius:10px;background:#1c222a;border:1px solid var(--line);display:grid;place-items:center;color:var(--acid);font-style:normal;font-size:11px;font-weight:950}.tip b{display:block;font-size:12px}.tip p{margin:3px 0 0;color:var(--muted);font-size:11px;line-height:1.5}.toast{position:fixed;z-index:50;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translate(-50%,20px);opacity:0;pointer-events:none;transition:.22s;background:rgba(28,32,39,.95);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);border-radius:15px;padding:11px 14px;max-width:calc(100vw - 30px);text-align:center;font-size:11.5px;font-weight:850}.toast.show{opacity:1;transform:translate(-50%,0)}.footer{text-align:center;color:#646d79;font-size:10px;font-weight:700;padding:21px 6px 0}
+@media(max-width:420px){.stats{grid-template-columns:repeat(2,1fr)}.hero{min-height:410px}.orb{width:190px;height:190px}.rings{width:220px;height:220px}.rings:before{width:266px;height:266px}.rings:after{width:310px;height:310px}.impact{font-size:53px}.presetGrid{grid-template-columns:repeat(2,1fr)}}@media(min-width:650px){.app{padding-left:22px;padding-right:22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.grid .card{margin-top:0}.hero{min-height:470px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
 </head>
 <body>
-  <main class="app">
-    <div class="topbar">
-      <div class="brand"><div class="brandmark">S!</div>SLAP! Mobile</div>
-      <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">待機中</span></div>
-    </div>
-
-    <section class="hero" id="hero">
-      <div class="kicker">Motion impact detector</div>
-      <div class="orbWrap">
-        <div class="rings"></div>
-        <div class="orb">
-          <div class="score" id="score">0.0</div>
-          <div class="scoreLabel">IMPACT</div>
-        </div>
-      </div>
-      <div class="meter">
-        <div class="track"><div class="fill" id="fill"></div></div>
-        <div class="max">MAX <span id="maxScore">0.0</span></div>
-      </div>
-    </section>
-
-    <div class="actions">
-      <button class="primary" id="startBtn">啟動動作感測</button>
-      <button class="test" id="testBtn">測試</button>
-    </div>
-
-    <section class="stats">
-      <div class="stat"><b id="hitCount">0</b><span>觸發次數</span></div>
-      <div class="stat"><b id="thresholdStat">10.0</b><span>觸發門檻</span></div>
-      <div class="stat"><b id="sensorHz">0</b><span>感測 Hz</span></div>
-    </section>
-
-    <div class="grid2">
-      <section class="card">
-        <h2>偵測設定</h2>
-        <div class="row">
-          <div class="rowText"><b>靈敏度門檻</b><small>越低越容易觸發</small></div>
-          <div class="sliderWrap">
-            <input id="threshold" type="range" min="3" max="28" step="0.5" value="10" />
-            <div class="sliderValue"><span id="thresholdValue">10.0</span> m/s²</div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="rowText"><b>冷卻時間</b><small>避免一次拍打連續觸發</small></div>
-          <select id="cooldown">
-            <option value="250">250 ms</option>
-            <option value="450" selected>450 ms</option>
-            <option value="700">700 ms</option>
-            <option value="1000">1 秒</option>
-          </select>
-        </div>
-        <div class="row">
-          <div class="rowText"><b>螢幕常亮</b><small>支援的瀏覽器保持畫面開啟</small></div>
-          <label class="switch"><input id="wakeToggle" type="checkbox" checked /><span></span></label>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>回饋效果</h2>
-        <div class="row">
-          <div class="rowText"><b>音效模式</b><small>力度會控制音量與音色</small></div>
-          <select id="soundPack">
-            <option value="slap" selected>SLAP</option>
-            <option value="bonk">BONK</option>
-            <option value="arcade">ARCADE</option>
-            <option value="alarm">ALARM</option>
-          </select>
-        </div>
-        <div class="row">
-          <div class="rowText"><b>播放音效</b><small>使用 Web Audio 即時合成</small></div>
-          <label class="switch"><input id="soundToggle" type="checkbox" checked /><span></span></label>
-        </div>
-        <div class="row">
-          <div class="rowText"><b>震動</b><small>Android 支援較完整，iPhone 依系統而定</small></div>
-          <label class="switch"><input id="vibrateToggle" type="checkbox" checked /><span></span></label>
-        </div>
-        <div class="row">
-          <div class="rowText"><b>自訂音效</b><small id="fileName">MP3 / WAV / M4A</small></div>
-          <label class="upload">選擇檔案<input id="customAudio" type="file" accept="audio/*" /></label>
-        </div>
-      </section>
-    </div>
-
-    <section class="card help">
-      <h2>手機使用方式</h2>
-      <div class="steps">
-        <div class="step"><div class="stepNo">01</div><div><b>按「啟動動作感測」</b><p>iPhone / iPad 會要求「動作與方向」權限，請選允許。</p></div></div>
-        <div class="step"><div class="stepNo">02</div><div><b>先用「測試」確認音效</b><p>這一步也會解除手機瀏覽器的音訊播放限制。</p></div></div>
-        <div class="step"><div class="stepNo">03</div><div><b>拿穩手機，再輕拍或快速晃一下</b><p>畫面顯示的 Impact 超過門檻就會觸發。若太敏感，把門檻拉高。</p></div></div>
-      </div>
-      <div class="notice">請不要用力摔、敲或撞擊手機。本頁是利用手機 IMU 動作資料做衝擊偵測，不需要麥克風；感測資料只在目前頁面本機運算。</div>
-    </section>
-
-    <div class="footer">SLAP! MOBILE · BROWSER MOTION LAB · 2026</div>
-  </main>
-  <div class="toast" id="toast"></div>
-
+<main class="app">
+<div class="top"><div class="brand"><div class="logo">S!</div>SLAP! Mobile <small style="font-size:9px;color:#78818e;letter-spacing:.08em">2.0</small></div><div class="status" id="status"><span class="dot"></span><span id="statusText">待機</span></div></div>
+<div class="modeTabs"><button class="modeTab active" data-view="normal">娛樂模式</button><button class="modeTab danger" data-view="security">防盜模式</button></div>
+<section class="hero" id="hero"><div class="kicker" id="kicker">Motion impact detector</div><div class="orbWrap"><div class="rings"></div><div class="orb"><div class="impact" id="impact">0.0</div><div class="label">IMPACT</div><div class="tier" id="tier">READY</div></div></div><div class="meter"><div class="track"><div class="fill" id="fill"></div></div><div class="max">MAX <span id="maxImpact">0.0</span></div></div></section>
+<div class="normal" id="normalView">
+<div class="actions"><button class="btn primary" id="startBtn">啟動動作感測</button><button class="btn test" id="testBtn">測試</button></div>
+<div class="stats"><div class="stat"><b id="hits">0</b><span>SLAPS</span></div><div class="stat"><b id="combo">0</b><span>COMBO</span></div><div class="stat"><b id="thresholdStat">10.0</b><span>門檻 m/s²</span></div><div class="stat"><b id="hz">0</b><span>SENSOR Hz</span></div></div>
+<section class="card"><h2>音效風格</h2><div class="presetGrid" id="presets"><button class="preset active" data-preset="slap"><span class="emoji">✋</span>SLAP</button><button class="preset" data-preset="bonk"><span class="emoji">🔨</span>BONK</button><button class="preset" data-preset="cat"><span class="emoji">🐱</span>CAT</button><button class="preset" data-preset="glass"><span class="emoji">💥</span>CRASH</button><button class="preset" data-preset="arcade"><span class="emoji">👾</span>ARCADE</button><button class="preset" data-preset="siren"><span class="emoji">🚨</span>SIREN</button></div></section>
+<div class="grid"><section class="card"><h2>偵測設定</h2><div class="row"><div class="rowText"><b>靈敏度門檻</b><small>越低越容易觸發</small></div><div class="slider"><input id="threshold" type="range" min="3" max="28" step="0.5" value="10"><div class="val"><span id="thresholdVal">10.0</span> m/s²</div></div></div><div class="row"><div class="rowText"><b>冷卻時間</b><small>避免一次震動重複觸發</small></div><select id="cooldown"><option value="220">220 ms</option><option value="420" selected>420 ms</option><option value="650">650 ms</option><option value="900">900 ms</option></select></div><div class="row"><div class="rowText"><b>震動回饋</b><small>Android 支援較完整</small></div><label class="switch"><input id="vibration" type="checkbox" checked><span></span></label></div><div class="row"><div class="rowText"><b>螢幕常亮</b><small>支援 Wake Lock 的瀏覽器</small></div><label class="switch"><input id="wake" type="checkbox"><span></span></label></div></section>
+<section class="card"><h2>自訂玩法</h2><div class="row"><div class="rowText"><b>自訂音效</b><small>MP3 / WAV / M4A，本機播放</small></div><label class="upload" id="uploadLabel">選擇檔案<input id="audioFile" type="file" accept="audio/*"></label></div><div class="row"><div class="rowText"><b>爆擊閃光</b><small>重擊時加強視覺回饋</small></div><label class="switch"><input id="flash" type="checkbox" checked><span></span></label></div><div class="row"><div class="rowText"><b>連擊系統</b><small>2 秒內連續觸發累積 Combo</small></div><label class="switch"><input id="comboEnabled" type="checkbox" checked><span></span></label></div></section></div>
+</div>
+<div class="security" id="securityView"><section class="card"><h2>手機防盜警報</h2><div class="securityBanner">放好手機後按下「開始警戒」。3 秒倒數結束後，明顯位移或拿起手機就會觸發持續警報。請勿把它當成唯一的防盜措施。</div><div class="countdown" id="countdown">OFF</div><button class="arm" id="armBtn">開始警戒</button><div class="row" style="margin-top:12px"><div class="rowText"><b>防盜靈敏度</b><small>建議 4–8 m/s²</small></div><div class="slider"><input id="securityThreshold" type="range" min="2" max="16" step="0.5" value="5.5"><div class="val"><span id="securityVal">5.5</span> m/s²</div></div></div><div class="row"><div class="rowText"><b>持續警報</b><small>觸發後循環鳴叫直到解除</small></div><label class="switch"><input id="loopAlarm" type="checkbox" checked><span></span></label></div></section></div>
+<section class="card help"><h2>手機使用提示</h2><div class="tips"><div class="tip"><i>01</i><div><b>先啟動感測</b><p>iPhone 必須由你點按按鈕後才能要求 DeviceMotion 權限。</p></div></div><div class="tip"><i>02</i><div><b>先用「測試」確認聲音</b><p>瀏覽器需要一次使用者互動才能解鎖音訊播放。</p></div></div><div class="tip"><i>03</i><div><b>不要真的用力打手機</b><p>快速晃動或輕拍握著手機的手即可。保護手機與手腕比高分重要。</p></div></div></div></section>
+<div class="footer">SLAP! Mobile · motion data stays on this device</div>
+</main><div class="toast" id="toast"></div>
 <script>
-(() => {
-  const $ = (q) => document.querySelector(q);
-  const ui = {
-    hero: $('#hero'), score: $('#score'), fill: $('#fill'), maxScore: $('#maxScore'),
-    startBtn: $('#startBtn'), testBtn: $('#testBtn'), statusPill: $('#statusPill'), statusText: $('#statusText'),
-    hitCount: $('#hitCount'), threshold: $('#threshold'), thresholdValue: $('#thresholdValue'), thresholdStat: $('#thresholdStat'),
-    cooldown: $('#cooldown'), soundPack: $('#soundPack'), soundToggle: $('#soundToggle'), vibrateToggle: $('#vibrateToggle'),
-    wakeToggle: $('#wakeToggle'), sensorHz: $('#sensorHz'), customAudio: $('#customAudio'), fileName: $('#fileName'), toast: $('#toast')
-  };
-
-  let running = false;
-  let audioCtx = null;
-  let customBuffer = null;
-  let lastHit = 0;
-  let hitCount = 0;
-  let maxScore = 0;
-  let displayScore = 0;
-  let gravity = {x:0,y:0,z:0};
-  let lastMagnitude = 0;
-  let wakeLock = null;
-  let sampleCount = 0;
-  let hzTimer = null;
-  let raf = null;
-
-  const saved = JSON.parse(localStorage.getItem('slap-mobile-settings') || '{}');
-  if (saved.threshold) ui.threshold.value = saved.threshold;
-  if (saved.cooldown) ui.cooldown.value = saved.cooldown;
-  if (saved.soundPack) ui.soundPack.value = saved.soundPack;
-  if (typeof saved.sound === 'boolean') ui.soundToggle.checked = saved.sound;
-  if (typeof saved.vibrate === 'boolean') ui.vibrateToggle.checked = saved.vibrate;
-  if (typeof saved.wake === 'boolean') ui.wakeToggle.checked = saved.wake;
-
-  function persist(){
-    localStorage.setItem('slap-mobile-settings', JSON.stringify({
-      threshold: ui.threshold.value,
-      cooldown: ui.cooldown.value,
-      soundPack: ui.soundPack.value,
-      sound: ui.soundToggle.checked,
-      vibrate: ui.vibrateToggle.checked,
-      wake: ui.wakeToggle.checked
-    }));
-  }
-
-  function updateThreshold(){
-    const v = Number(ui.threshold.value).toFixed(1);
-    ui.thresholdValue.textContent = v;
-    ui.thresholdStat.textContent = v;
-    persist();
-  }
-  updateThreshold();
-  ['cooldown','soundPack','soundToggle','vibrateToggle','wakeToggle'].forEach(id => ui[id].addEventListener('change', persist));
-  ui.threshold.addEventListener('input', updateThreshold);
-
-  function toast(msg){
-    ui.toast.textContent = msg;
-    ui.toast.classList.add('show');
-    clearTimeout(toast.t);
-    toast.t = setTimeout(() => ui.toast.classList.remove('show'), 2200);
-  }
-
-  async function ensureAudio(){
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-  }
-
-  function setStatus(on, text){
-    ui.statusPill.classList.toggle('on', on);
-    ui.statusText.textContent = text;
-    ui.startBtn.textContent = on ? '停止感測' : '啟動動作感測';
-    ui.startBtn.classList.toggle('stop', on);
-  }
-
-  async function requestWakeLock(){
-    if (!ui.wakeToggle.checked || !('wakeLock' in navigator)) return;
-    try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
-  }
-  async function releaseWakeLock(){
-    try{ if (wakeLock) await wakeLock.release(); }catch(e){}
-    wakeLock = null;
-  }
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && running) requestWakeLock();
-  });
-
-  async function start(){
-    try{
-      await ensureAudio();
-      if (typeof DeviceMotionEvent === 'undefined') {
-        toast('此瀏覽器沒有提供 DeviceMotion 感測器');
-        return;
-      }
-      if (typeof DeviceMotionEvent.requestPermission === 'function') {
-        const result = await DeviceMotionEvent.requestPermission();
-        if (result !== 'granted') {
-          toast('需要允許「動作與方向」才能偵測拍打');
-          return;
-        }
-      }
-      gravity = {x:0,y:0,z:0};
-      lastMagnitude = 0;
-      sampleCount = 0;
-      window.addEventListener('devicemotion', onMotion, {passive:true});
-      running = true;
-      setStatus(true, '感測中');
-      await requestWakeLock();
-      clearInterval(hzTimer);
-      hzTimer = setInterval(() => { ui.sensorHz.textContent = sampleCount; sampleCount = 0; }, 1000);
-      animateMeter();
-      toast('感測器已啟動');
-    } catch (err) {
-      console.error(err);
-      toast('啟動失敗，請確認瀏覽器的動作感測權限');
-    }
-  }
-
-  async function stop(){
-    window.removeEventListener('devicemotion', onMotion);
-    running = false;
-    clearInterval(hzTimer);
-    ui.sensorHz.textContent = '0';
-    setStatus(false, '待機中');
-    await releaseWakeLock();
-    cancelAnimationFrame(raf);
-    toast('已停止感測');
-  }
-
-  function onMotion(e){
-    sampleCount++;
-    let ax=0, ay=0, az=0;
-    if (e.acceleration && [e.acceleration.x,e.acceleration.y,e.acceleration.z].every(v => v !== null)) {
-      ax = e.acceleration.x || 0;
-      ay = e.acceleration.y || 0;
-      az = e.acceleration.z || 0;
-    } else if (e.accelerationIncludingGravity) {
-      const a = e.accelerationIncludingGravity;
-      const alpha = .82;
-      gravity.x = alpha * gravity.x + (1-alpha) * (a.x || 0);
-      gravity.y = alpha * gravity.y + (1-alpha) * (a.y || 0);
-      gravity.z = alpha * gravity.z + (1-alpha) * (a.z || 0);
-      ax = (a.x || 0) - gravity.x;
-      ay = (a.y || 0) - gravity.y;
-      az = (a.z || 0) - gravity.z;
-    } else return;
-
-    const magnitude = Math.sqrt(ax*ax + ay*ay + az*az);
-    const jerk = Math.abs(magnitude - lastMagnitude);
-    lastMagnitude = magnitude;
-    const impact = Math.min(60, magnitude + jerk * .42);
-    displayScore = Math.max(displayScore, impact);
-    maxScore = Math.max(maxScore, impact);
-    ui.maxScore.textContent = maxScore.toFixed(1);
-
-    const threshold = Number(ui.threshold.value);
-    const now = performance.now();
-    if (impact >= threshold && now - lastHit >= Number(ui.cooldown.value)) {
-      lastHit = now;
-      trigger(impact, false);
-    }
-  }
-
-  function animateMeter(){
-    const threshold = Number(ui.threshold.value);
-    displayScore *= .88;
-    if (displayScore < .05) displayScore = 0;
-    ui.score.textContent = displayScore.toFixed(1);
-    ui.fill.style.width = Math.min(100, displayScore / Math.max(threshold*2.2, 24) * 100) + '%';
-    if (running || displayScore > 0) raf = requestAnimationFrame(animateMeter);
-  }
-
-  function flash(){
-    ui.hero.classList.remove('flash');
-    void ui.hero.offsetWidth;
-    ui.hero.classList.add('flash');
-    setTimeout(() => ui.hero.classList.remove('flash'), 320);
-  }
-
-  function noiseBurst(ctx, start, duration, gainAmount, hp=650){
-    const length = Math.max(1, Math.floor(ctx.sampleRate * duration));
-    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i=0;i<length;i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/length, .3);
-    const src = ctx.createBufferSource(); src.buffer = buffer;
-    const filter = ctx.createBiquadFilter(); filter.type='highpass'; filter.frequency.value=hp;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(gainAmount, start);
-    gain.gain.exponentialRampToValueAtTime(.001, start+duration);
-    src.connect(filter).connect(gain).connect(ctx.destination);
-    src.start(start); src.stop(start+duration+.02);
-  }
-
-  function tone(ctx, type, from, to, start, duration, gainAmount){
-    const osc = ctx.createOscillator(); const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(from, start);
-    osc.frequency.exponentialRampToValueAtTime(Math.max(30,to), start+duration);
-    gain.gain.setValueAtTime(gainAmount, start);
-    gain.gain.exponentialRampToValueAtTime(.001, start+duration);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(start); osc.stop(start+duration+.02);
-  }
-
-  async function playSound(intensity){
-    if (!ui.soundToggle.checked) return;
-    await ensureAudio();
-    const ctx = audioCtx;
-    const power = Math.max(.2, Math.min(1, intensity / 28));
-    const now = ctx.currentTime;
-
-    if (customBuffer) {
-      const src = ctx.createBufferSource(); const gain = ctx.createGain();
-      src.buffer = customBuffer; gain.gain.value = .35 + power*.65;
-      src.connect(gain).connect(ctx.destination); src.start();
-      return;
-    }
-
-    switch(ui.soundPack.value){
-      case 'bonk':
-        tone(ctx,'sine',210+power*55,72,now,.24,.28+power*.45);
-        tone(ctx,'triangle',420,130,now,.12,.08+power*.15);
-        break;
-      case 'arcade':
-        tone(ctx,'square',620+power*220,180,now,.16,.08+power*.11);
-        tone(ctx,'square',920,260,now+.055,.12,.05+power*.08);
-        break;
-      case 'alarm':
-        tone(ctx,'sawtooth',730,620,now,.24,.06+power*.08);
-        tone(ctx,'sawtooth',910,760,now+.14,.25,.05+power*.07);
-        break;
-      default:
-        noiseBurst(ctx,now,.085,.22+power*.38,520);
-        noiseBurst(ctx,now+.01,.045,.11+power*.23,1900);
-        tone(ctx,'sine',155+power*35,58,now,.13,.18+power*.28);
-    }
-  }
-
-  function vibrate(intensity){
-    if (!ui.vibrateToggle.checked || !navigator.vibrate) return;
-    const d = Math.round(18 + Math.min(55, intensity*1.5));
-    navigator.vibrate(d);
-  }
-
-  function trigger(intensity, isTest){
-    displayScore = Math.max(displayScore, intensity);
-    maxScore = Math.max(maxScore, intensity);
-    ui.maxScore.textContent = maxScore.toFixed(1);
-    hitCount++;
-    ui.hitCount.textContent = hitCount;
-    flash();
-    playSound(intensity).catch(()=>{});
-    vibrate(intensity);
-    if (isTest) toast('測試觸發成功');
-  }
-
-  ui.startBtn.addEventListener('click', () => running ? stop() : start());
-  ui.testBtn.addEventListener('click', async () => {
-    await ensureAudio();
-    if (!raf) animateMeter();
-    trigger(Number(ui.threshold.value) * 1.35, true);
-  });
-
-  ui.customAudio.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    try{
-      await ensureAudio();
-      const buf = await file.arrayBuffer();
-      customBuffer = await audioCtx.decodeAudioData(buf.slice(0));
-      ui.fileName.textContent = file.name.length > 18 ? file.name.slice(0,15)+'…' : file.name;
-      toast('自訂音效已載入');
-    } catch(err){
-      customBuffer = null;
-      toast('無法讀取這個音訊檔');
-    }
-  });
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-  }
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const hero=$('#hero'), impactEl=$('#impact'), fill=$('#fill'), tierEl=$('#tier'), maxEl=$('#maxImpact'), status=$('#status'), statusText=$('#statusText');
+const startBtn=$('#startBtn'), testBtn=$('#testBtn'), threshold=$('#threshold'), thresholdVal=$('#thresholdVal'), thresholdStat=$('#thresholdStat'), cooldown=$('#cooldown'), hitsEl=$('#hits'), comboEl=$('#combo'), hzEl=$('#hz');
+const vibration=$('#vibration'), wake=$('#wake'), flash=$('#flash'), comboEnabled=$('#comboEnabled'), audioFile=$('#audioFile'), uploadLabel=$('#uploadLabel');
+const securityView=$('#securityView'), normalView=$('#normalView'), armBtn=$('#armBtn'), countdown=$('#countdown'), securityThreshold=$('#securityThreshold'), securityVal=$('#securityVal'), loopAlarm=$('#loopAlarm');
+let running=false, armed=false, alarming=false, armTimer=null, audioCtx=null, customAudio=null, wakeLock=null, preset='slap';
+let maxImpact=0,hits=0,combo=0,lastHit=0,lastEvent=0,eventCounter=0,hzTimer=0,lastHzTime=performance.now(),alarmInterval=null;
+const saved=JSON.parse(localStorage.getItem('slap2')||'{}');
+if(saved.threshold) threshold.value=saved.threshold;if(saved.cooldown) cooldown.value=saved.cooldown;if(saved.securityThreshold) securityThreshold.value=saved.securityThreshold;if(saved.preset) preset=saved.preset;
+thresholdVal.textContent=Number(threshold.value).toFixed(1);thresholdStat.textContent=Number(threshold.value).toFixed(1);securityVal.textContent=Number(securityThreshold.value).toFixed(1);
+$$('.preset').forEach(b=>b.classList.toggle('active',b.dataset.preset===preset));
+function save(){localStorage.setItem('slap2',JSON.stringify({threshold:threshold.value,cooldown:cooldown.value,securityThreshold:securityThreshold.value,preset}))}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),1900)}
+function ensureAudio(){if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended') audioCtx.resume()}
+function noise(duration=.08,gain=.18,cut=1700){ensureAudio();const len=Math.max(1,Math.floor(audioCtx.sampleRate*duration)),buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);const src=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();src.buffer=buf;f.type='lowpass';f.frequency.value=cut;g.gain.value=gain;src.connect(f).connect(g).connect(audioCtx.destination);src.start()}
+function tone(freq=180,d=.1,type='sine',gain=.18,slide=0){ensureAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain(),now=audioCtx.currentTime;o.type=type;o.frequency.setValueAtTime(freq,now);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),now+d);g.gain.setValueAtTime(.001,now);g.gain.exponentialRampToValueAtTime(gain,now+.01);g.gain.exponentialRampToValueAtTime(.001,now+d);o.connect(g).connect(audioCtx.destination);o.start(now);o.stop(now+d+.02)}
+function playPreset(power=1,name=preset){ensureAudio();const p=Math.max(.45,Math.min(2.2,power));if(customAudio){customAudio.currentTime=0;customAudio.volume=Math.min(1,.4*p);customAudio.play().catch(()=>{});return}
+if(name==='slap'){noise(.055+.025*p,.16*p,2300);tone(115,.09,'triangle',.06*p,-35)}
+else if(name==='bonk'){tone(210-.01*p,.13,'sine',.24*p,-115);tone(95,.16,'triangle',.08*p,-35)}
+else if(name==='cat'){tone(520,.09,'sine',.12*p,160);setTimeout(()=>tone(690,.11,'sine',.1*p,-120),65)}
+else if(name==='glass'){noise(.18,.15*p,6000);tone(1550,.08,'square',.035*p,-900);setTimeout(()=>tone(1120,.09,'square',.025*p,-720),45)}
+else if(name==='arcade'){tone(260,.08,'square',.08*p,260);setTimeout(()=>tone(520,.09,'square',.06*p,-120),70)}
+else if(name==='siren'){tone(560,.18,'sawtooth',.075*p,300);setTimeout(()=>tone(830,.18,'sawtooth',.06*p,-250),150)}}
+function alarmBurst(){playPreset(1.7,'siren');setTimeout(()=>playPreset(1.4,'siren'),280);if(navigator.vibrate)navigator.vibrate([220,80,220,80,350])}
+function setStatus(text,mode=''){statusText.textContent=text;status.className='status'+(mode?' '+mode:'')}
+function setTier(v){let text='READY',cls='';const th=Number(threshold.value);if(v>=th*2.2){text='CRITICAL';cls='critical'}else if(v>=th*1.55){text='HARD';cls='hard'}else if(v>=th){text='MEDIUM';cls='medium'}else if(v>=th*.55){text='SOFT';cls='soft'}tierEl.textContent=text;tierEl.className='tier '+cls;return text}
+function visualize(v){impactEl.textContent=v.toFixed(1);fill.style.width=Math.min(100,v/32*100)+'%';if(v>maxImpact){maxImpact=v;maxEl.textContent=v.toFixed(1)}setTier(v)}
+function trigger(v,force=false){const now=performance.now(),cd=Number(cooldown.value);if(!force&&now-lastHit<cd)return;lastHit=now;hits++;hitsEl.textContent=hits;const th=Number(threshold.value),power=Math.max(.55,Math.min(2.2,v/th));playPreset(power);if(vibration.checked&&navigator.vibrate)navigator.vibrate(v>=th*2?[45,30,80]:[35]);if(flash.checked){hero.classList.remove('hit');void hero.offsetWidth;hero.classList.add('hit')}if(comboEnabled.checked){combo=(now-(trigger._prev||0)<2000)?combo+1:1;trigger._prev=now;comboEl.textContent=combo;clearTimeout(trigger._ct);trigger._ct=setTimeout(()=>{combo=0;comboEl.textContent='0'},2200)}setTimeout(()=>hero.classList.remove('hit'),320)}
+function motionImpact(e){const a=e.acceleration||e.accelerationIncludingGravity;if(!a)return 0;let x=a.x||0,y=a.y||0,z=a.z||0;if(!e.acceleration&&e.accelerationIncludingGravity){const mag=Math.sqrt(x*x+y*y+z*z),scale=mag?Math.abs(mag-9.81)/mag:0;x*=scale;y*=scale;z*=scale}return Math.sqrt(x*x+y*y+z*z)}
+function onMotion(e){eventCounter++;const v=motionImpact(e);visualize(v);const now=performance.now();if(now-lastHzTime>=1000){hzEl.textContent=Math.round(eventCounter*1000/(now-lastHzTime));eventCounter=0;lastHzTime=now}if(armed){if(!alarming&&v>=Number(securityThreshold.value))startAlarm(v);return}if(running&&v>=Number(threshold.value))trigger(v)}
+async function requestMotion(){ensureAudio();try{if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){const p=await DeviceMotionEvent.requestPermission();if(p!=='granted')throw new Error('denied')}window.removeEventListener('devicemotion',onMotion);window.addEventListener('devicemotion',onMotion,{passive:true});running=true;startBtn.textContent='停止感測';startBtn.classList.add('stop');setStatus('感測中','on');toast('動作感測已啟動')}catch(e){toast('無法取得動作感測權限');setStatus('權限未開啟')}}
+function stopMotion(){if(armed||alarming){toast('請先解除防盜模式');return}window.removeEventListener('devicemotion',onMotion);running=false;startBtn.textContent='啟動動作感測';startBtn.classList.remove('stop');setStatus('待機')}
+async function toggleWake(){try{if(wake.checked&&'wakeLock'in navigator){wakeLock=await navigator.wakeLock.request('screen');toast('螢幕常亮已開啟')}else if(wakeLock){await wakeLock.release();wakeLock=null}}catch(e){wake.checked=false;toast('此瀏覽器不支援螢幕常亮')}}
+async function prepareSecurity(){if(alarming){stopAlarm();return}if(armed){disarm();return}ensureAudio();try{if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){const p=await DeviceMotionEvent.requestPermission();if(p!=='granted')throw 0}window.removeEventListener('devicemotion',onMotion);window.addEventListener('devicemotion',onMotion,{passive:true});running=true;armBtn.disabled=true;let n=3;countdown.textContent=n;setStatus('準備警戒');armTimer=setInterval(()=>{n--;if(n>0){countdown.textContent=n;return}clearInterval(armTimer);armTimer=null;armed=true;armBtn.disabled=false;armBtn.textContent='解除警戒';armBtn.classList.add('disarm');countdown.textContent='ARMED';hero.classList.remove('alarm');setStatus('警戒中','on');$('#kicker').textContent='ANTI-THEFT ARMED';toast('防盜警戒已啟動')},1000)}catch(e){armBtn.disabled=false;toast('需要動作感測權限才能啟用防盜')}}
+function startAlarm(v){alarming=true;armed=true;hero.classList.add('alarm');setStatus('警報中','alarm');countdown.textContent='ALARM';armBtn.textContent='停止警報';armBtn.classList.add('disarm');$('#kicker').textContent='MOVEMENT DETECTED';visualize(v);alarmBurst();if(loopAlarm.checked)alarmInterval=setInterval(alarmBurst,1100)}
+function stopAlarm(){clearInterval(alarmInterval);alarmInterval=null;alarming=false;armed=false;hero.classList.remove('alarm');countdown.textContent='OFF';armBtn.textContent='開始警戒';armBtn.classList.remove('disarm');$('#kicker').textContent='ANTI-THEFT MODE';setStatus('防盜待機');toast('警報已解除')}
+function disarm(){clearInterval(armTimer);armTimer=null;armed=false;alarming=false;clearInterval(alarmInterval);alarmInterval=null;hero.classList.remove('alarm');countdown.textContent='OFF';armBtn.disabled=false;armBtn.textContent='開始警戒';armBtn.classList.remove('disarm');$('#kicker').textContent='ANTI-THEFT MODE';setStatus('防盜待機')}
+startBtn.onclick=()=>running?stopMotion():requestMotion();testBtn.onclick=()=>{ensureAudio();const v=Math.max(Number(threshold.value)*1.6,14);visualize(v);trigger(v,true)};armBtn.onclick=prepareSecurity;
+threshold.oninput=()=>{thresholdVal.textContent=Number(threshold.value).toFixed(1);thresholdStat.textContent=Number(threshold.value).toFixed(1);save()};securityThreshold.oninput=()=>{securityVal.textContent=Number(securityThreshold.value).toFixed(1);save()};cooldown.onchange=save;wake.onchange=toggleWake;
+$$('.preset').forEach(b=>b.onclick=()=>{preset=b.dataset.preset;$$('.preset').forEach(x=>x.classList.toggle('active',x===b));customAudio=null;uploadLabel.childNodes[0].nodeValue='選擇檔案';save();playPreset(1,preset)});
+audioFile.onchange=()=>{const f=audioFile.files&&audioFile.files[0];if(!f)return;customAudio=new Audio(URL.createObjectURL(f));customAudio.preload='auto';uploadLabel.childNodes[0].nodeValue=f.name.slice(0,15);ensureAudio();toast('已載入自訂音效')};
+$$('.modeTab').forEach(b=>b.onclick=()=>{const view=b.dataset.view;$$('.modeTab').forEach(x=>x.classList.toggle('active',x===b));normalView.classList.toggle('hidden',view!=='normal');securityView.classList.toggle('show',view==='security');if(view==='security'){$('#kicker').textContent=armed?'ANTI-THEFT ARMED':'ANTI-THEFT MODE';setStatus(armed?'警戒中':'防盜待機',armed?'on':'')}else{if(armed||alarming)disarm();$('#kicker').textContent='MOTION IMPACT DETECTOR';setStatus(running?'感測中':'待機',running?'on':'')}});
+document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&wake.checked&&'wakeLock'in navigator){try{wakeLock=await navigator.wakeLock.request('screen')}catch(e){}}});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 })();
 </script>
 </body>
