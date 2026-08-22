@@ -1,0 +1,209 @@
+name: Add CC0 human hit voices and background audio
+
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-human-hit-audio.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  human-hit-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install audio tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg unzip
+
+      - name: Download and prepare CC0 human voice sounds
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p sounds/voices /tmp/slap-voices/male /tmp/slap-voices/female
+          UA='Mozilla/5.0 SLAP-Mobile-CC0-Vendor'
+
+          # EZduzziteh — Hurt Sound Effects (CC0), six small individual MP3 clips.
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/hurt_01_0.mp3' -o sounds/voices/hurt-01.mp3
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/hurt_02.mp3'   -o sounds/voices/hurt-02.mp3
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/hurt_03.mp3'   -o sounds/voices/hurt-03.mp3
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/hurt_04.mp3'   -o sounds/voices/hurt-04.mp3
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/hurt_05.mp3'   -o sounds/voices/hurt-05.mp3
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/hurt_06.mp3'   -o sounds/voices/hurt-06.mp3
+
+          # GreyFrogGames — Player Hit (damage) (CC0).
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/playerhit_0.mp3' -o sounds/voices/player-hit.mp3
+
+          # Nocturnal_Vanguard / AuraVoice — female hurt/grunts and scream (CC0).
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/female_hurt_grunts_groans_1.ogg' -o /tmp/slap-voices/female-pack.ogg
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/female_scream_1.ogg' -o sounds/voices/female-scream.ogg
+
+          # Split the female pack into short reaction clips. This keeps each hit snappy.
+          ffmpeg -hide_banner -loglevel error -y -i /tmp/slap-voices/female-pack.ogg \
+            -f segment -segment_time 1.25 -reset_timestamps 1 -c:a libvorbis -q:a 4 \
+            sounds/voices/female-%02d.ogg || true
+
+          # HaelDB — four different male vocalists, yelling / grunting pack (CC0 option).
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/yelling%20sounds.zip' -o /tmp/slap-voices/male.zip
+          unzip -qq -o /tmp/slap-voices/male.zip -d /tmp/slap-voices/male
+
+          # Convert a compact selection into browser-friendly OGG clips, max 2.2 s each.
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          src = [p for p in sorted(Path('/tmp/slap-voices/male').rglob('*')) if p.is_file() and p.suffix.lower() in {'.wav','.mp3','.ogg','.aif','.aiff','.m4a'}]
+          # Spread picks across the archive instead of taking only the first voice.
+          if len(src) > 12:
+              idx = sorted(set(round(i*(len(src)-1)/11) for i in range(12)))
+              src = [src[i] for i in idx]
+          else:
+              src = src[:12]
+          out = Path('sounds/voices')
+          for n, p in enumerate(src, 1):
+              dest = out / f'male-{n:02d}.ogg'
+              subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-i',str(p),'-t','2.2','-c:a','libvorbis','-q:a','4',str(dest)], check=False)
+          PY
+
+          # EmoPreben — extra pain sounds (CC0).
+          curl -L --fail --retry 3 -A "$UA" 'https://opengameart.org/sites/default/files/painsounds.zip' -o /tmp/slap-voices/painsounds.zip || true
+          if [ -s /tmp/slap-voices/painsounds.zip ]; then
+            mkdir -p /tmp/slap-voices/pains
+            unzip -qq -o /tmp/slap-voices/painsounds.zip -d /tmp/slap-voices/pains || true
+            python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          src = [p for p in sorted(Path('/tmp/slap-voices/pains').rglob('*')) if p.is_file() and p.suffix.lower() in {'.wav','.mp3','.ogg','.aif','.aiff','.m4a'}][:8]
+          out = Path('sounds/voices')
+          for n, p in enumerate(src, 1):
+              dest = out / f'pain-{n:02d}.ogg'
+              subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-i',str(p),'-t','2.2','-c:a','libvorbis','-q:a','4',str(dest)], check=False)
+          PY
+          fi
+
+          find sounds/voices -type f -size 0 -delete
+          echo 'Bundled voice clips:'
+          find sounds/voices -maxdepth 1 -type f -printf '%f %k KB\n' | sort
+
+      - name: Integrate human presets and background-compatible player
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Version labels.
+          s = s.replace('SLAP! Mobile 3.1 · CC0 Audio Pack', 'SLAP! Mobile 3.2 · Human Hit Pack')
+          s = s.replace('<span class="ver">3.1</span>', '<span class="ver">3.2</span>')
+          s = s.replace('SLAP! Mobile 3.1 · Built-in CC0 Audio · Motion data stays on this device · PWA', 'SLAP! Mobile 3.2 · Human Hit Pack · CC0 · Background Audio · PWA')
+
+          # Add a dedicated human reaction panel once.
+          if 'id="backgroundAudio"' not in s:
+              marker = '</section>\n<section class="view" id="gameView">'
+              panel = '''<div class="card"><h2>人聲受擊音效 <small style="font-size:9px;color:#7f8996;font-weight:800">CC0 VOICE PACK</small></h2><div class="presetGrid" id="humanPresets"><button class="preset" data-sound="human"><span>🎭</span>RANDOM HUMAN</button><button class="preset" data-sound="humanMale"><span>👨</span>MALE</button><button class="preset" data-sound="humanFemale"><span>👩</span>FEMALE</button><button class="preset" data-sound="humanShort"><span>😵</span>SHORT HURT</button><button class="preset" data-sound="humanYell"><span>🗣️</span>YELL</button><button class="preset" data-sound="humanHeavy"><span>💫</span>HEAVY HIT</button></div><div class="row"><div class="rowText"><b>背景音訊模式</b><small>使用持續 HTML Audio 播放器 + Media Session；切到其他 App 或鎖屏時，盡量維持正在播放的音訊。iPhone 背景可能暫停動作感測，因此背景中不保證能偵測新的拍擊。</small></div><label class="switch"><input id="backgroundAudio" type="checkbox"><span></span></label></div><div class="row"><div class="rowText"><b>人聲隨機化</b><small>每次有效拍擊從目前分類隨機抽一個聲音，並加入輕微音高差異，避免一直重複同一聲。</small></div><button class="mini" id="voiceTest">試聽人聲</button></div></div>\n'''
+              s = s.replace(marker, panel + marker, 1)
+
+          voice_dir = Path('sounds/voices')
+          files = sorted('./' + str(x).replace('\\','/') for x in voice_dir.glob('*') if x.is_file())
+          male = [x for x in files if '/male-' in x] + [x for x in files if '/pain-' in x]
+          female = [x for x in files if '/female-' in x]
+          short = [x for x in files if '/hurt-' in x or x.endswith('/player-hit.mp3') or '/pain-' in x]
+          yell = [x for x in files if 'scream' in x or '/male-' in x]
+          heavy = [x for x in files if 'scream' in x or '/pain-' in x or x.endswith('hurt-05.mp3') or x.endswith('hurt-06.mp3')]
+          human = list(dict.fromkeys(short + male + female))
+
+          sample_obj = {
+              'slap':['./sounds/slap-soft.ogg','./sounds/slap-medium.ogg','./sounds/slap-heavy.ogg'],
+              'bonk':['./sounds/bonk.ogg'],
+              'cat':['./sounds/cat.ogg'],
+              'crash':['./sounds/crash.ogg'],
+              'arcade':['./sounds/bell.ogg'],
+              'siren':['./sounds/alarm.ogg'],
+              'human':human,
+              'humanMale':male or short,
+              'humanFemale':female or short,
+              'humanShort':short or human,
+              'humanYell':yell or human,
+              'humanHeavy':heavy or human,
+          }
+          sample_js = 'const sampleFiles=' + json.dumps(sample_obj, ensure_ascii=False, separators=(',',':')) + ';'
+          s = re.sub(r'const sampleFiles=\{.*?\};\nconst sampleBroken=', sample_js + '\nconst sampleBroken=', s, count=1, flags=re.S)
+
+          # Random selection for voice categories while preserving impact-tier slap selection.
+          s = re.sub(
+              r"function samplePath\(kind,power\)\{.*?\}",
+              "function samplePath(kind,power){const arr=sampleFiles[kind];if(!arr||!arr.length)return null;if(kind==='slap'){const r=power/state.threshold;return arr[r<1.3?0:r<1.9?1:2]}return arr[Math.floor(Math.random()*arr.length)]}",
+              s, count=1, flags=re.S
+          )
+
+          # Replace the disposable Audio() player with a persistent pool + Audio Session / Media Session progressive enhancement.
+          play_start = s.index('function playSound(power=10,kind=state.sound){')
+          play_end = s.index('\nlet alarmInt=', play_start)
+          replacement = r'''const mediaPool=Array.from({length:6},()=>{const el=document.createElement('audio');el.preload='auto';el.setAttribute('playsinline','');el.setAttribute('webkit-playsinline','');el.style.display='none';document.body.appendChild(el);return el});
+          let mediaCursor=0,lastMedia=null,backgroundAudioMode=localStorage.getItem('slapBackgroundAudio')==='1';
+          function applyAudioSession(){try{if('audioSession'in navigator)navigator.audioSession.type=backgroundAudioMode?'playback':'auto'}catch(e){}}
+          function setupMediaSession(){if(!('mediaSession'in navigator))return;try{navigator.mediaSession.metadata=new MediaMetadata({title:'SLAP! Human Hit SFX',artist:'SLAP! Mobile',album:'Built-in CC0 Voice Pack'});navigator.mediaSession.setActionHandler('play',()=>{if(lastMedia)lastMedia.play().catch(()=>{})});navigator.mediaSession.setActionHandler('pause',()=>mediaPool.forEach(a=>a.pause()));navigator.mediaSession.setActionHandler('stop',()=>{mediaPool.forEach(a=>{a.pause();try{a.currentTime=0}catch(e){}})})}catch(e){}}
+          function playSound(power=10,kind=state.sound){const src=samplePath(kind,power);if(!src||sampleBroken.has(src)){synthSound(power,kind);return}try{applyAudioSession();const el=mediaPool[mediaCursor++%mediaPool.length];el.pause();try{el.currentTime=0}catch(e){}el.src=src;el.volume=Math.min(1,.48+power/32);if(kind!=='siren')el.playbackRate=Math.max(.88,Math.min(1.14,.98+(power-state.threshold)/95+(Math.random()-.5)*.055));else el.playbackRate=1;lastMedia=el;if(backgroundAudioMode)setupMediaSession();const promise=el.play();if(promise&&promise.catch)promise.catch(()=>{sampleBroken.add(src);synthSound(power,kind)});el.onerror=()=>{sampleBroken.add(src);synthSound(power,kind)}}catch(e){sampleBroken.add(src);synthSound(power,kind)}}'''
+          s = s[:play_start] + replacement + s[play_end:]
+
+          # Wire the new background mode and voice test after existing preset handlers.
+          anchor = "$('threshold').oninput=e=>"
+          if "$('backgroundAudio').onchange" not in s:
+              wiring = r'''if($('backgroundAudio')){$('backgroundAudio').checked=backgroundAudioMode;$('backgroundAudio').onchange=e=>{backgroundAudioMode=e.target.checked;localStorage.setItem('slapBackgroundAudio',backgroundAudioMode?'1':'0');applyAudioSession();if(backgroundAudioMode){setupMediaSession();toast('背景音訊模式已開啟')}else toast('背景音訊模式已關閉')}}if($('voiceTest'))$('voiceTest').onclick=()=>{audio();playSound(Math.max(state.threshold+4,14),state.sound.startsWith('human')?state.sound:'human')};document.addEventListener('visibilitychange',()=>{if(backgroundAudioMode)applyAudioSession()});
+          '''
+              s = s.replace(anchor, wiring + anchor, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          # Rebuild offline cache recursively so every nested voice clip is available without a network connection.
+          assets = ['./','./index.html','./manifest.webmanifest','./icon.svg']
+          assets += sorted('./' + str(x).replace('\\','/') for x in Path('sounds').rglob('*') if x.is_file())
+          sw = "const CACHE='slap-mobile-v5-human-voices';\nconst ASSETS=" + json.dumps(assets, ensure_ascii=False) + ";\n\n" + r'''self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
+          self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
+          self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;if(event.request.mode==='navigate'){event.respondWith(fetch(event.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return r}).catch(()=>caches.match('./index.html')));return}event.respondWith(caches.match(event.request).then(hit=>hit||fetch(event.request).then(r=>{if(r&&r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(event.request,copy))}return r}))) });'''
+          Path('sw.js').write_text(sw, encoding='utf-8')
+          PY
+
+      - name: Record human voice licenses
+        shell: bash
+        run: |
+          cat >> AUDIO_LICENSES.md <<'EOF'
+
+          ## Human hit voice pack — CC0
+
+          The following files are vendored into `sounds/voices/` for local/offline playback.
+
+          - **EZduzziteh — Hurt Sound Effects** — CC0 — https://opengameart.org/content/hurt-sound-effects
+            - `hurt-01.mp3` through `hurt-06.mp3`
+          - **GreyFrogGames — Player Hit (damage)** — CC0 — https://opengameart.org/content/player-hit-damage
+            - `player-hit.mp3`
+          - **Nocturnal_Vanguard / AuraVoice — Female Hurt Grunts & Groans** — CC0 — https://opengameart.org/content/female-hurt-grunts-groans
+            - split into short `female-*.ogg` reaction clips
+          - **Nocturnal_Vanguard / AuraVoice — Female Scream 1** — CC0 — https://opengameart.org/content/female-scream-1
+            - `female-scream.ogg`
+          - **HaelDB — Male Grunt/Yelling sounds** — offered under CC0 (also lists OGA-BY 3.0) — https://opengameart.org/content/male-gruntyelling-sounds
+            - compact converted selections `male-*.ogg`
+          - **EmoPreben — Pain sounds** — CC0 — https://opengameart.org/content/pain-sounds-by-emopreben
+            - compact converted selections `pain-*.ogg`
+
+          Background-compatible playback uses persistent `HTMLAudioElement` instances, `navigator.audioSession.type = "playback"` where supported, and Media Session controls. Browsers may still suspend JavaScript and motion sensors when a page is backgrounded.
+          EOF
+
+      - name: Commit human voice pack
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js AUDIO_LICENSES.md sounds/voices
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit'
+          else
+            git commit -m 'Bundle CC0 human hit voices and background audio mode'
+            git push
+          fi
