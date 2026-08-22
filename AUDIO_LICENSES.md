@@ -25,3 +25,22 @@ Source: https://opengameart.org/content/short-alarm
 Vendored when upstream download is available: `sounds/alarm.ogg`.
 
 If an optional upstream file is unavailable during vendoring, SLAP! Mobile keeps its synthesized fallback for that preset.
+
+## Human hit voice pack — CC0
+
+The following files are vendored into `sounds/voices/` for local/offline playback.
+
+- **EZduzziteh — Hurt Sound Effects** — CC0 — https://opengameart.org/content/hurt-sound-effects
+  - `hurt-01.mp3` through `hurt-06.mp3`
+- **GreyFrogGames — Player Hit (damage)** — CC0 — https://opengameart.org/content/player-hit-damage
+  - `player-hit.mp3`
+- **Nocturnal_Vanguard / AuraVoice — Female Hurt Grunts & Groans** — CC0 — https://opengameart.org/content/female-hurt-grunts-groans
+  - split into short `female-*.ogg` reaction clips
+- **Nocturnal_Vanguard / AuraVoice — Female Scream 1** — CC0 — https://opengameart.org/content/female-scream-1
+  - `female-scream.ogg`
+- **HaelDB — Male Grunt/Yelling sounds** — offered under CC0 (also lists OGA-BY 3.0) — https://opengameart.org/content/male-gruntyelling-sounds
+  - compact converted selections `male-*.ogg`
+- **EmoPreben — Pain sounds** — CC0 — https://opengameart.org/content/pain-sounds-by-emopreben
+  - compact converted selections `pain-*.ogg`
+
+Background-compatible playback uses persistent `HTMLAudioElement` instances, `navigator.audioSession.type = "playback"` where supported, and Media Session controls. Browsers may still suspend JavaScript and motion sensors when a page is backgrounded.
