@@ -1,7 +1,7 @@
 {
-  "name": "SLAP! Mobile 3.6",
+  "name": "SLAP! Mobile 3.7",
   "short_name": "SLAP!",
-  "description": "手機動作感測遊戲與防盜警戒，內建人聲、原創印度 Dhol / Bhangra 音效、拍擊力度分級、挑戰模式與背景存活強化。",
+  "description": "手機動作感測遊戲，內建人聲、印度 Dhol 與原創 du-du-du 受擊唱段、挑戰模式、Touch Guard 與 iPhone 背景存活強化。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
