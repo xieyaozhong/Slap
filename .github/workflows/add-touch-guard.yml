@@ -91,7 +91,6 @@ function cancelUnlockHold(){clearTimeout(holdTimer);holdTimer=null;cancelAnimati
 function drawUnlockHold(){if(!holdStarted)return;const pct=Math.min(100,(performance.now()-holdStarted)/1200*100);touchUnlock.style.setProperty('--hold',pct+'%');if(pct<100)holdRAF=requestAnimationFrame(drawUnlockHold)}
 function beginUnlockHold(e){e.preventDefault();e.stopPropagation();cancelUnlockHold();holdStarted=performance.now();drawUnlockHold();holdTimer=setTimeout(()=>{cancelUnlockHold();setTouchLock(false)},1200)}
 if(touchUnlock){touchUnlock.addEventListener('pointerdown',beginUnlockHold);['pointerup','pointercancel','pointerleave'].forEach(n=>touchUnlock.addEventListener(n,cancelUnlockHold));touchUnlock.addEventListener('contextmenu',e=>e.preventDefault())}
-// Block browser/page shortcuts that commonly fire during aggressive phone movement.
 ['gesturestart','gesturechange','gestureend'].forEach(n=>document.addEventListener(n,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea'))e.preventDefault()});
 document.addEventListener('selectstart',e=>{if(touchLocked||!e.target.closest('input,textarea'))e.preventDefault()});
@@ -106,7 +105,6 @@ updateTouchGuardUI();
 
           p.write_text(s, encoding='utf-8')
 
-          # Manifest version/description.
           mp = Path('manifest.webmanifest')
           if mp.exists():
               m = mp.read_text(encoding='utf-8')
@@ -116,14 +114,12 @@ updateTouchGuardUI();
               m = m.replace('手機動作感測遊戲與防盜警戒：拍擊偵測、30 秒挑戰、自動校正與事件紀錄。', '手機動作感測遊戲與防盜警戒：人聲受擊音效、拍擊偵測、Touch Guard 防誤觸、挑戰模式與事件紀錄。')
               mp.write_text(m, encoding='utf-8')
 
-          # Force PWA cache refresh.
           swp = Path('sw.js')
           if swp.exists():
               sw = swp.read_text(encoding='utf-8')
               sw = re.sub(r"const CACHE='[^']+';", "const CACHE='slap-mobile-v6-touch-guard';", sw, count=1)
               swp.write_text(sw, encoding='utf-8')
 
-          # Syntax validate inline JS.
           mt = re.search(r'<script>\s*(.*?)\s*</script>', s, re.S)
           if not mt:
               raise SystemExit('inline script not found')
@@ -143,3 +139,5 @@ updateTouchGuardUI();
             git commit -m 'Upgrade SLAP Mobile to 3.3 touch guard'
             git push
           fi
+
+# retrigger-touch-guard-2026-08-22
