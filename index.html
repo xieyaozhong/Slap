@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SLAP!">
-<title>SLAP! Mobile 3.3 · Touch Guard</title>
+<title>SLAP! Mobile 3.4 · iOS Background Survival</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <style>
@@ -36,11 +36,14 @@ html.touch-locked,html.touch-locked body{overflow:hidden!important;overscroll-be
 body.touch-locked{position:fixed;inset:0;width:100%;height:100%}
 .systemGestureNote{margin-top:9px;padding:10px 11px;border-radius:14px;background:rgba(92,225,230,.055);border:1px solid rgba(92,225,230,.14);font-size:10px;color:#aeb8c4;line-height:1.55}
 
+
+.bgSurvivalGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.bgSurvivalGrid>div{padding:10px 8px;border:1px solid var(--line);border-radius:14px;background:#171c23;text-align:center}.bgSurvivalGrid small{display:block;color:var(--muted);font-size:8.5px;font-weight:800}.bgSurvivalGrid b{display:block;margin-top:3px;font-size:10px}.bgAlive{color:var(--acid)}.bgWarn{color:var(--orange)}.bgDead{color:var(--hot)}
+
 </style>
 </head>
 <body>
 <main class="app">
-<div class="top"><div class="brand"><div class="logo">S!</div>SLAP! Mobile <span class="ver">3.3</span></div><div class="status" id="status"><span class="dot"></span><span id="statusText">待機</span></div></div>
+<div class="top"><div class="brand"><div class="logo">S!</div>SLAP! Mobile <span class="ver">3.4</span></div><div class="status" id="status"><span class="dot"></span><span id="statusText">待機</span></div></div>
 <div class="tabs"><button class="tab active" data-view="free">自由 SLAP</button><button class="tab" data-view="game">30 秒挑戰</button><button class="tab guard" data-view="guard">防盜警戒</button></div>
 <div class="touchGuardBar"><button class="mini touchLockBtn" id="touchLockBtn">🔒 鎖定操作</button><span class="tgState" id="touchGuardState">防誤觸 OFF</span></div>
 <section class="hero" id="hero"><div class="kicker" id="kicker">Adaptive motion detector</div><div class="orbWrap"><div class="rings"></div><div class="orb"><div class="impact" id="impact">0.0</div><div class="label">IMPACT</div><div class="tier" id="tier">READY</div></div></div><div class="meter"><div class="track"><div class="fill" id="fill"></div></div><div class="max">MAX <span id="maxImpact">0.0</span></div></div></section>
@@ -48,7 +51,8 @@ body.touch-locked{position:fixed;inset:0;width:100%;height:100%}
 <div class="actions"><button class="btn primary" id="startBtn">啟動動作感測</button><button class="btn secondary" id="testBtn">測試</button></div>
 <div class="stats"><div class="stat"><b id="hits">0</b><span>SLAPS</span></div><div class="stat"><b id="combo">0</b><span>COMBO</span></div><div class="stat"><b id="thresholdStat">10.0</b><span>門檻 m/s²</span></div><div class="stat"><b id="hz">0</b><span>SENSOR Hz</span></div></div>
 <div class="card"><h2>內建 CC0 音效 <small style="font-size:9px;color:#7f8996;font-weight:800">REAL AUDIO</small></h2><div class="presetGrid" id="presets"><button class="preset active" data-sound="slap"><span>✋</span>SLAP</button><button class="preset" data-sound="bonk"><span>🔨</span>BONK</button><button class="preset" data-sound="cat"><span>🐱</span>CAT</button><button class="preset" data-sound="crash"><span>💥</span>CRASH</button><button class="preset" data-sound="arcade"><span>👾</span>ARCADE</button><button class="preset" data-sound="siren"><span>🚨</span>SIREN</button></div></div>
-<div class="card"><h2>人聲受擊音效 <small style="font-size:9px;color:#7f8996;font-weight:800">CC0 VOICE PACK</small></h2><div class="presetGrid" id="humanPresets"><button class="preset" data-sound="human"><span>🎭</span>RANDOM HUMAN</button><button class="preset" data-sound="humanMale"><span>👨</span>MALE</button><button class="preset" data-sound="humanFemale"><span>👩</span>FEMALE</button><button class="preset" data-sound="humanShort"><span>😵</span>SHORT HURT</button><button class="preset" data-sound="humanYell"><span>🗣️</span>YELL</button><button class="preset" data-sound="humanHeavy"><span>💫</span>HEAVY HIT</button></div><div class="row"><div class="rowText"><b>背景音訊模式</b><small>使用持續 HTML Audio 播放器 + Media Session；切到其他 App 或鎖屏時，盡量維持正在播放的音訊。iPhone 背景可能暫停動作感測，因此背景中不保證能偵測新的拍擊。</small></div><label class="switch"><input id="backgroundAudio" type="checkbox"><span></span></label></div><div class="row"><div class="rowText"><b>人聲隨機化</b><small>每次有效拍擊從目前分類隨機抽一個聲音，並加入輕微音高差異，避免一直重複同一聲。</small></div><button class="mini" id="voiceTest">試聽人聲</button></div></div>
+<div class="card"><h2>人聲受擊音效 <small style="font-size:9px;color:#7f8996;font-weight:800">CC0 VOICE PACK</small></h2><div class="presetGrid" id="humanPresets"><button class="preset" data-sound="human"><span>🎭</span>RANDOM HUMAN</button><button class="preset" data-sound="humanMale"><span>👨</span>MALE</button><button class="preset" data-sound="humanFemale"><span>👩</span>FEMALE</button><button class="preset" data-sound="humanShort"><span>😵</span>SHORT HURT</button><button class="preset" data-sound="humanYell"><span>🗣️</span>YELL</button><button class="preset" data-sound="humanHeavy"><span>💫</span>HEAVY HIT</button></div><div class="row"><div class="rowText"><b>背景音訊模式</b><small>使用持續 HTML Audio 播放器 + Media Session；切到其他 App 或鎖屏時，盡量維持正在播放的音訊。iPhone 背景可能暫停動作感測，因此背景中不保證能偵測新的拍擊。</small></div><label class="switch"><input id="backgroundAudio" type="checkbox"><span></span></label></div><div class="row"><div class="rowText"><b>iPhone 背景存活強化</b><small>維持低功耗 HTML Audio 載波、Audio Session playback、Media Session 與自動恢復。可提高切到其他 App／鎖屏後存活機率，但 iOS 仍可能停止 Motion。</small></div><label class="switch"><input id="iosSurvival" type="checkbox"><span></span></label></div><div class="bgSurvivalGrid"><div><small>AUDIO</small><b id="bgAudioState">OFF</b></div><div><small>MOTION</small><b id="bgMotionState">WAIT</b></div><div><small>APP STATE</small><b id="bgAppState">FOREGROUND</b></div></div>
+<div class="row"><div class="rowText"><b>人聲隨機化</b><small>每次有效拍擊從目前分類隨機抽一個聲音，並加入輕微音高差異，避免一直重複同一聲。</small></div><button class="mini" id="voiceTest">試聽人聲</button></div></div>
 </section>
 <section class="view" id="gameView"><div class="gamePanel"><div class="timer" id="gameTime">30.0</div><div class="scoreBig"><span id="gameScore">0</span> pts</div><div class="gameHint">30 秒內累積最多有效拍擊。重擊與連擊會獲得更高分。</div><button class="btn primary" style="width:100%;margin-top:14px" id="gameBtn">開始挑戰</button></div><div class="stats"><div class="stat"><b id="gameHits">0</b><span>HITS</span></div><div class="stat"><b id="gameCombo">0</b><span>COMBO</span></div><div class="stat"><b id="bestGame">0</b><span>BEST SCORE</span></div><div class="stat"><b id="gameBestImpact">0.0</b><span>BEST IMPACT</span></div></div></section>
 <section class="view" id="guardView"><div class="card"><h2>手機防盜警戒</h2><div class="banner">把手機放好後啟動。3 秒後系統建立靜止基準；若手機被拿起、推動或快速晃動，就會觸發持續警報。</div><div class="countdown" id="guardState">READY</div><button class="btn danger" style="width:100%" id="armBtn">開始 3 秒警戒倒數</button><div class="row"><div class="rowText"><b>防盜靈敏度</b><small>數值越低越容易觸發</small></div><div class="slider"><input id="guardThreshold" type="range" min="2" max="10" step=".5" value="4"><div class="val"><span id="guardThresholdVal">4.0</span> m/s²</div></div></div></div></section>
@@ -58,7 +62,8 @@ body.touch-locked{position:fixed;inset:0;width:100%;height:100%}
 </div>
 <div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2 style="margin:0">事件紀錄</h2><div class="tinyBtns"><button class="mini" id="shareLog">分享</button><button class="mini" id="clearLog">清除</button></div></div><div class="log" id="log" style="margin-top:12px"></div></div>
 <div class="card"><h2>防誤觸與系統手勢</h2><div class="row"><div class="rowText"><b>啟動感測後自動鎖定操作</b><small>動作感測啟動後自動蓋上觸控盾牌，避免手掌、衣物、雙擊與滑動誤觸按鈕。</small></div><label class="switch"><input id="autoTouchLock" type="checkbox" checked><span></span></label></div><div class="row"><div class="rowText"><b>鎖定時停用頁面手勢</b><small>阻擋長按選單、文字選取、雙擊縮放、拖曳、下拉更新與頁面滑動。</small></div><b class="ok" style="font-size:11px">ACTIVE</b></div><div class="systemGestureNote"><b>iPhone 建議：</b>加入主畫面後執行可減少 Safari 介面干擾。Home 指示條、控制中心、通知中心與系統「背面輕點」屬於 iOS 層級，網頁不能強制關閉；若拍擊時會觸發 iPhone 快捷指令，請到「設定 → 輔助使用 → 觸控 → 背面輕點」關閉雙點／三點動作。需要更完整的單一 App 鎖定可搭配 iOS「引導使用模式」。</div></div>
-<div class="footer">SLAP! Mobile 3.3 · Touch Guard · CC0 · Background Audio · PWA</div>
+<div class="systemGestureNote"><b>背景測試方式：</b>先啟動動作感測 → 開啟「背景音訊模式」與「iPhone 背景存活強化」→ 加入主畫面執行 → 再鎖屏或切 App。回來後 App 會顯示 Motion 是否曾被 iOS 暫停。</div>
+<div class="footer">SLAP! Mobile 3.4 · iOS Background Survival · CC0 · Background Audio · PWA</div>
 </main><div class="touchShield" id="touchShield" aria-hidden="true"><div class="touchShieldTop">🔒 TOUCH GUARD · 感測仍持續</div><div class="touchUnlockWrap"><button class="touchUnlock" id="touchUnlock"><span>長按 1.2 秒解除鎖定</span></button><div class="touchUnlockHint">一般點擊、雙擊與滑動不會解除</div></div></div><div class="toast" id="toast"></div>
 <script>
 (()=>{'use strict';
@@ -90,9 +95,9 @@ function gameHit(v){const now=performance.now();state.gameHits++;state.gameCombo
 function logEvent(type,v,icon){state.logs.unshift({t:Date.now(),type,v:+v.toFixed(1),icon});state.logs=state.logs.slice(0,30);localStorage.setItem('slapLogs',JSON.stringify(state.logs));renderLogs()}
 function renderLogs(){const box=$('log');if(!state.logs.length){box.innerHTML='<div class="empty">還沒有事件紀錄</div>';return}box.innerHTML=state.logs.slice(0,10).map(x=>`<div class="logItem"><div class="logIcon">${x.icon||'•'}</div><div class="logMain"><b>${x.type}</b><small>${new Date(x.t).toLocaleString()}</small></div><div class="logVal">${x.v.toFixed(1)}</div></div>`).join('')}
 function motionValue(e){let x=0,y=0,z=0,a=e.acceleration;if(a&&a.x!=null){x=a.x||0;y=a.y||0;z=a.z||0;return Math.sqrt(x*x+y*y+z*z)}a=e.accelerationIncludingGravity||{};x=a.x||0;y=a.y||0;z=a.z||0;return Math.abs(Math.sqrt(x*x+y*y+z*z)-9.81)}
-function onMotion(e){const v=motionValue(e);state.hzCount++;const now=performance.now();if(now-state.hzStart>1000){state.hz=Math.round(state.hzCount*1000/(now-state.hzStart));$('hz').textContent=state.hz;state.hzCount=0;state.hzStart=now}if(state.calibrating){state.calSamples.push(v);return}pulse(v);if(state.guard){if(state.guardBase==null)state.guardBase=v;const delta=Math.abs(v-state.guardBase);state.guardBase=state.guardBase*.92+v*.08;if(delta>=state.guardThreshold||v>=state.guardThreshold+3)startAlarm();return}if((state.view==='free'||state.view==='game')&&v>=state.threshold)hit(v)}
+function onMotion(e){lastMotionAt=performance.now();const v=motionValue(e);state.hzCount++;const now=performance.now();if(now-state.hzStart>1000){state.hz=Math.round(state.hzCount*1000/(now-state.hzStart));$('hz').textContent=state.hz;state.hzCount=0;state.hzStart=now}if(state.calibrating){state.calSamples.push(v);return}pulse(v);if(state.guard){if(state.guardBase==null)state.guardBase=v;const delta=Math.abs(v-state.guardBase);state.guardBase=state.guardBase*.92+v*.08;if(delta>=state.guardThreshold||v>=state.guardThreshold+3)startAlarm();return}if((state.view==='free'||state.view==='game')&&v>=state.threshold)hit(v)}
 async function permission(){try{if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){const r=await DeviceMotionEvent.requestPermission();if(r!=='granted')throw Error('denied')}return true}catch(e){toast('需要允許「動作與方向」權限');return false}}
-async function start(){if(state.running){stop();return}if(!('DeviceMotionEvent'in window)){toast('此瀏覽器沒有 DeviceMotion 支援');return}if(!await permission())return;audio();window.addEventListener('devicemotion',onMotion,{passive:true});state.running=true;setStatus('感測中','on');$('startBtn').textContent='停止感測';$('startBtn').classList.add('stop');if($('wake').checked)requestWake();toast('動作感測已啟動');if(autoTouchLock)setTimeout(()=>setTouchLock(true),520)}
+async function start(){if(state.running){stop();return}if(!('DeviceMotionEvent'in window)){toast('此瀏覽器沒有 DeviceMotion 支援');return}if(!await permission())return;audio();window.addEventListener('devicemotion',onMotion,{passive:true});state.running=true;setStatus('感測中','on');$('startBtn').textContent='停止感測';$('startBtn').classList.add('stop');if($('wake').checked)requestWake();toast('動作感測已啟動');setBgState('bgMotionState','LIVE','bgAlive');if(autoTouchLock)setTimeout(()=>setTouchLock(true),520)}
 function stop(){window.removeEventListener('devicemotion',onMotion);state.running=false;state.guard=false;state.guardBase=null;stopAlarm();setStatus('待機');$('startBtn').textContent='啟動動作感測';$('startBtn').classList.remove('stop');$('armBtn').textContent='開始 3 秒警戒倒數';$('guardState').textContent='READY';releaseWake()}
 async function ensureRunning(){if(state.running)return true;await start();return state.running}
 async function requestWake(){try{if('wakeLock'in navigator)state.wakeLock=await navigator.wakeLock.request('screen')}catch(e){}}
@@ -128,6 +133,61 @@ document.addEventListener('touchmove',e=>{if(touchLocked)e.preventDefault()},{pa
 if(touchShield){['touchstart','touchmove','touchend'].forEach(n=>touchShield.addEventListener(n,e=>{if(!e.target.closest('#touchUnlock'))e.preventDefault()},{passive:false}));touchShield.addEventListener('pointerdown',e=>{if(e.target===touchShield)e.preventDefault()})}
 document.addEventListener('keydown',e=>{if(touchLocked&&e.key==='Escape')e.preventDefault()});
 updateTouchGuardUI();
+
+
+let iosSurvivalMode=localStorage.getItem('slapIosSurvival')==='1';
+let bgCarrier=null,bgCarrierURL=null,lastMotionAt=performance.now(),backgroundEnteredAt=0,bgRecoverTimer=null;
+const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(/Macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+function setBgState(id,text,cls=''){const el=$(id);if(!el)return;el.textContent=text;el.className=cls}
+function makeCarrierURL(){
+  if(bgCarrierURL)return bgCarrierURL;
+  const rate=8000,secs=1,samples=rate*secs,bytes=44+samples*2,buf=new ArrayBuffer(bytes),v=new DataView(buf);
+  const w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,bytes-8,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,samples*2,true);
+  for(let i=0;i<samples;i++){const d=(i%97===0?3:(i%53===0?-3:0));v.setInt16(44+i*2,d,true)}
+  bgCarrierURL=URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));return bgCarrierURL;
+}
+function ensureCarrier(){
+  if(bgCarrier)return bgCarrier;
+  bgCarrier=document.createElement('audio');bgCarrier.loop=true;bgCarrier.preload='auto';bgCarrier.playsInline=true;bgCarrier.setAttribute('playsinline','');bgCarrier.setAttribute('webkit-playsinline','');bgCarrier.src=makeCarrierURL();bgCarrier.volume=1;bgCarrier.style.display='none';document.body.appendChild(bgCarrier);
+  bgCarrier.addEventListener('playing',()=>setBgState('bgAudioState','ALIVE','bgAlive'));
+  bgCarrier.addEventListener('pause',()=>{if(iosSurvivalMode)setBgState('bgAudioState','PAUSED','bgWarn')});
+  bgCarrier.addEventListener('error',()=>setBgState('bgAudioState','ERROR','bgDead'));
+  return bgCarrier;
+}
+async function startIosSurvival(){
+  iosSurvivalMode=true;localStorage.setItem('slapIosSurvival','1');backgroundAudioMode=true;localStorage.setItem('slapBackgroundAudio','1');if($('backgroundAudio'))$('backgroundAudio').checked=true;
+  try{audio()}catch(e){}applyAudioSession();setupMediaSession();
+  const c=ensureCarrier();try{await c.play()}catch(e){setBgState('bgAudioState','TAP AGAIN','bgWarn');toast('請再點一次背景強化開關以允許音訊')}
+  try{if('mediaSession'in navigator)navigator.mediaSession.playbackState='playing'}catch(e){}
+  setBgState('bgMotionState',state.running?'LIVE':'START SENSOR',state.running?'bgAlive':'bgWarn');
+  toast('iPhone 背景存活強化已開啟');
+}
+function stopIosSurvival(){
+  iosSurvivalMode=false;localStorage.setItem('slapIosSurvival','0');if(bgCarrier){bgCarrier.pause();try{bgCarrier.currentTime=0}catch(e){}}setBgState('bgAudioState','OFF');setBgState('bgMotionState','WAIT');toast('背景存活強化已關閉');
+}
+async function recoverForeground(){
+  if(!iosSurvivalMode)return;
+  applyAudioSession();try{if(state.audio&&state.audio.state==='suspended')await state.audio.resume()}catch(e){}
+  try{if(bgCarrier&&bgCarrier.paused)await bgCarrier.play()}catch(e){}
+  if(state.running){window.removeEventListener('devicemotion',onMotion);window.addEventListener('devicemotion',onMotion,{passive:true});if($('wake').checked)requestWake()}
+  clearTimeout(bgRecoverTimer);bgRecoverTimer=setTimeout(()=>{const age=performance.now()-lastMotionAt;if(state.running){if(age<2500)setBgState('bgMotionState','LIVE','bgAlive');else setBgState('bgMotionState','RESUMED','bgWarn')}},900);
+}
+if($('iosSurvival')){$('iosSurvival').checked=iosSurvivalMode;$('iosSurvival').onchange=e=>e.target.checked?startIosSurvival():stopIosSurvival()}
+if(iosSurvivalMode){setBgState('bgAudioState','READY','bgWarn');setBgState('bgMotionState',state.running?'LIVE':'START SENSOR',state.running?'bgAlive':'bgWarn')}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){
+    backgroundEnteredAt=performance.now();setBgState('bgAppState','BACKGROUND','bgWarn');
+    if(iosSurvivalMode){applyAudioSession();try{if(bgCarrier&&bgCarrier.paused)bgCarrier.play().catch(()=>{})}catch(e){}}
+  }else{
+    setBgState('bgAppState','FOREGROUND','bgAlive');
+    const gap=backgroundEnteredAt?performance.now()-backgroundEnteredAt:0;
+    if(iosSurvivalMode&&state.running){const motionGap=performance.now()-lastMotionAt;if(gap>2500&&motionGap>Math.min(gap*.75,5000))setBgState('bgMotionState','iOS SUSPENDED','bgDead');else setBgState('bgMotionState','SURVIVED','bgAlive')}
+    recoverForeground();
+  }
+});
+window.addEventListener('pageshow',()=>recoverForeground());window.addEventListener('focus',()=>recoverForeground());
+if('mediaSession'in navigator){try{navigator.mediaSession.setActionHandler('play',()=>{if(iosSurvivalMode)startIosSurvival();else if(lastMedia)lastMedia.play().catch(()=>{})});navigator.mediaSession.setActionHandler('pause',()=>{mediaPool.forEach(a=>a.pause());if(bgCarrier)bgCarrier.pause()})}catch(e){}}
 
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;$('installHint').textContent='此裝置支援直接安裝'});$('installBtn').onclick=async()=>{if(state.installPrompt){state.installPrompt.prompt();await state.installPrompt.userChoice;state.installPrompt=null}else if(/iphone|ipad|ipod/i.test(navigator.userAgent))toast('iPhone：Safari 分享 → 加入主畫面');else toast('請使用瀏覽器選單的「安裝 App／加入主畫面」')};
 $('motionCompat').textContent='DeviceMotionEvent'in window?'支援':'不支援';$('motionCompat').className='DeviceMotionEvent'in window?'ok':'no';$('vibeCompat').textContent='vibrate'in navigator?'支援':'限制';$('vibeCompat').className='vibrate'in navigator?'ok':'no';$('wakeCompat').textContent='wakeLock'in navigator?'支援':'限制';$('wakeCompat').className='wakeLock'in navigator?'ok':'no';document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.running&&$('wake').checked)requestWake()});renderLogs();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
