@@ -1,0 +1,44 @@
+name: Vendor India Dhol CC0 audio
+
+on:
+  push:
+    paths:
+      - 'tools/add_india_button.py'
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Download CC0 Dhol and patch app
+        run: python3 tools/add_india_button.py
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>\s*(.*?)\s*</script>',s,re.S)
+          if not m: raise SystemExit('inline script not found')
+          Path('/tmp/slap.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/slap.js
+      - name: Commit India audio pack
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html manifest.webmanifest sw.js sounds/india INDIA_AUDIO_LICENSE.md
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit'
+          else
+            git commit -m 'Add CC0 India Dhol button and audio pack'
+            git push
+          fi
