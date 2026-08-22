@@ -17,8 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install audio tools
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg p7zip-full
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: Vendor CC0 human voices and simplify presets
         run: python3 tools/expand_human_voices.py
       - name: Validate JavaScript
