@@ -1,7 +1,7 @@
 {
-  "name": "SLAP! Mobile 3.8",
-  "short_name": "SLAP! 3.8",
-  "description": "手機動作感測遊戲與防盜警戒，內建 67 個真人受擊、疼痛、悶哼與慘叫音效，支援背景音訊強化、力度分級與挑戰模式。",
+  "name": "SLAP! Mobile 3.9",
+  "short_name": "SLAP! 3.9",
+  "description": "手機動作感測受擊音效工具，內建 67 個真人 CC0 人聲，採用 MIT 開源頭像圖示、背景音訊強化、力度分級與挑戰模式。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
