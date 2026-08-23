@@ -1,0 +1,44 @@
+name: Upgrade one-tap permissions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/add_one_tap_permissions.py'
+      - '.github/workflows/upgrade-one-tap-permissions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply 3.11 upgrade
+        run: python tools/add_one_tap_permissions.py
+      - name: Validate inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          Path('/tmp/slap-inline.js').write_text('\n'.join(blocks),encoding='utf-8')
+          PY
+          node --check /tmp/slap-inline.js
+      - name: Commit deployed upgrade
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html manifest.webmanifest sw.js
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit'
+          else
+            git commit -m 'Upgrade SLAP Mobile to 3.11 one-tap permissions'
+            git push
+          fi
