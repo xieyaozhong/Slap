@@ -17,3 +17,5 @@ The avatar UI uses icons from **Tabler Icons**.
 - `avatar-heavy-hit.svg` ← `mood-sad-squint.svg`
 
 The MIT license text is available in the upstream repository.
+
+- `avatar-record.svg` ← `microphone.svg`

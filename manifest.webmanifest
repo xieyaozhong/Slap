@@ -1,7 +1,7 @@
 {
-  "name": "SLAP! Mobile 3.9",
-  "short_name": "SLAP! 3.9",
-  "description": "手機動作感測受擊音效工具，內建 67 個真人 CC0 人聲，採用 MIT 開源頭像圖示、背景音訊強化、力度分級與挑戰模式。",
+  "name": "SLAP! Mobile 3.10",
+  "short_name": "SLAP! 3.10",
+  "description": "手機動作感測受擊音效工具，內建 67 個真人 CC0 人聲與本機自錄慘叫變聲實驗室，支援 iPhone 麥克風錄音、Web Audio 變調與背景音訊強化。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
