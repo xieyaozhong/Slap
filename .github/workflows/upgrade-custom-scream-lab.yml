@@ -1,0 +1,51 @@
+name: Upgrade Custom Scream Lab
+
+on:
+  push:
+    paths:
+      - 'tools/upgrade_custom_scream_lab.py'
+      - '.github/workflows/upgrade-custom-scream-lab.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Upgrade recorder and custom scream FX
+        run: python3 tools/upgrade_custom_scream_lab.py
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>\s*(.*?)\s*</script>',s,re.S)
+          if not m: raise SystemExit('inline script not found')
+          Path('/tmp/slap.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/slap.js
+      - name: Validate required UI
+        run: |
+          grep -q 'SLAP! Mobile 3.10' index.html
+          grep -q 'id="customScreamPreset"' index.html
+          grep -q 'id="recordVoiceBtn"' index.html
+          grep -q 'function playCustomScream' index.html
+          grep -q 'slap-mobile-v12-custom-scream-lab' sw.js
+          test -f assets/avatars/avatar-record.svg
+      - name: Commit upgrade
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit'
+          else
+            git commit -m 'Upgrade SLAP Mobile to 3.10 custom scream lab'
+            git push
+          fi
