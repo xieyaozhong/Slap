@@ -23,7 +23,7 @@ INCLUDE = (
 )
 EXCLUDE = (
     'animal', 'dog', 'cat', 'wolf', 'horse', 'pig', 'bird', 'bear',
-    'zombie', 'monster', 'creature', 'dinosaur', 'dragon', 'alien',
+    'zombie', 'monster', 'mutant', 'demon', 'orc', 'creature', 'dinosaur', 'dragon', 'alien',
     'ghost', 'robot', 'engine', 'car_', 'tire', 'metal', 'music',
     'song', 'guitar', 'synth', 'gun', 'rifle', 'explosion'
 )

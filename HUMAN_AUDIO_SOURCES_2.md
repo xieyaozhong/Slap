@@ -37,6 +37,6 @@
 - `Samples/813310__qubodup__victim-screaming.flac`
 - `Samples/222648__mariallinas__wild-scream.mp3`
 - `Samples/360465__topschool__scream01.mp3`
-- `Samples/396797__scorpion67890__mutant-scream.wav`
+- `Samples/523216__feed__death-scream.wav`
 
 The previous generated India/Dhol/chant assets are removed. No song, melody, Dhol layer, or synthetic chant is included in the human hit presets.
