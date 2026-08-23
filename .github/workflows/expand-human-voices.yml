@@ -19,6 +19,15 @@ jobs:
           node-version: '22'
       - name: Install ffmpeg
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Enforce human-only source filters
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tools/expand_human_voices.py')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("'zombie', 'monster', 'creature', 'dinosaur'", "'zombie', 'monster', 'mutant', 'demon', 'orc', 'creature', 'dinosaur'")
+          p.write_text(s,encoding='utf-8')
+          PY
       - name: Vendor CC0 human voices and simplify presets
         run: python3 tools/expand_human_voices.py
       - name: Validate JavaScript
@@ -40,6 +49,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Nothing to commit'
           else
-            git commit -m 'Expand CC0 human hit voice pack and remove chant sounds'
+            git commit -m 'Keep only human CC0 hit reactions'
             git push
           fi
